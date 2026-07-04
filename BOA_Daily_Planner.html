@@ -431,9 +431,19 @@ function init(){
   document.getElementById('cleardone').addEventListener('click',clearDone);
   document.getElementById('addmtgbtn').addEventListener('click',function(){openMtgForm(ST);});
 
-  // Ensure today's plan
+  // Ensure today's plan — carry over current projects from most recent previous day
   var plans=ldP();
-  if(!plans[tod()]){plans[tod()]=blankPlan(tod());svP(plans);}
+  if(!plans[tod()]){
+    var newPlan=blankPlan(tod());
+    // Find most recent previous day and copy current projects
+    var prevDates=Object.keys(plans).filter(function(d){return d<tod();}).sort();
+    if(prevDates.length){
+      var lastDay=plans[prevDates[prevDates.length-1]];
+      if(lastDay.currentProjects) newPlan.currentProjects=lastDay.currentProjects.slice();
+    }
+    plans[tod()]=newPlan;
+    svP(plans);
+  }
 
   renderAll();
   loadPlanUI(tod());
