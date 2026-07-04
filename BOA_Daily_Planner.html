@@ -167,6 +167,21 @@ input.kii:focus{border-bottom-color:var(--blue)}
 .rosg{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px}
 .rosr{display:flex;gap:6px;font-size:11px;padding:2px 0}
 .rost{font-family:var(--m);color:var(--blue);font-size:9px;width:52px;flex-shrink:0}
+.proj-layout{display:grid;grid-template-columns:230px 1fr;gap:13px;align-items:flex-start;min-height:calc(100vh - 110px)}
+.psb{background:#fff;border-radius:8px;box-shadow:var(--shadow);overflow:hidden}
+.pitem{padding:10px 13px;border-bottom:1px solid var(--gl);cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:background .1s}
+.pitem:hover{background:var(--gxl)}.pitem.act{background:#EFF6FF;border-left:3px solid var(--blue)}
+.pitem:last-child{border-bottom:none}
+.piname{font-size:12px;font-weight:500;color:var(--dark);flex:1}
+.picnt{font-size:9px;color:var(--gray);background:var(--gl);padding:1px 6px;border-radius:10px;margin-left:6px}
+.pmain{background:#fff;border-radius:8px;box-shadow:var(--shadow);overflow:hidden}
+.padd{padding:9px 13px;border-bottom:1px solid var(--gl);display:flex;gap:7px;align-items:center;background:var(--gxl)}
+.padd input{border:1px solid var(--gl);border-radius:var(--r);padding:5px 9px;font-family:var(--f);font-size:12px;background:#fff;color:var(--dark)}
+.padd input:focus{outline:1px solid var(--blue);border-color:var(--blue)}
+.proj-link{background:transparent;border:none;cursor:pointer;color:var(--blue);font-size:11px;padding:0 3px;opacity:0;transition:opacity .15s;flex-shrink:0}
+.ni:hover .proj-link{opacity:1}
+.in-planner{font-size:10px;color:#059669;white-space:nowrap}
+.btn-added{background:#F0FDF4;border:1px solid #BBF7D0;color:#059669;font-size:10px;padding:2px 8px;border-radius:4px;cursor:default;font-family:var(--f);font-weight:600}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-thumb{background:var(--gl);border-radius:10px}
 .fi{animation:fi .2s ease}
@@ -183,6 +198,7 @@ input.kii:focus{border-bottom-color:var(--blue)}
   <nav>
     <button class="nb act" id="btn-today" onclick="showView('today')">Today</button>
     <button class="nb" id="btn-history" onclick="showView('history')">History</button>
+    <button class="nb" id="btn-projects" onclick="showView('projects')">Projects</button>
     <button class="nb" onclick="exportData()" title="Export your data to move between devices" style="font-size:10px">&#8681; Export Data</button>
     <button class="nb" onclick="importData()" title="Import data from another device" style="font-size:10px">&#8679; Import Data</button>
   </nav>
@@ -248,18 +264,18 @@ input.kii:focus{border-bottom-color:var(--blue)}
           <div class="pst">Current Projects</div>
           <div class="cp2">
             <div>
-              <div class="ni"><span class="nn">1.</span><input class="pi" id="p-cp0" placeholder="..."></div>
-              <div class="ni"><span class="nn">2.</span><input class="pi" id="p-cp1" placeholder="..."></div>
-              <div class="ni"><span class="nn">3.</span><input class="pi" id="p-cp2" placeholder="..."></div>
-              <div class="ni"><span class="nn">4.</span><input class="pi" id="p-cp3" placeholder="..."></div>
-              <div class="ni"><span class="nn">5.</span><input class="pi" id="p-cp4" placeholder="..."></div>
+              <div class="ni"><span class="nn">1.</span><input class="pi" id="p-cp0" placeholder="..."><button class="proj-link" onclick="goToProject(document.getElementById('p-cp0').value)" title="Open project page">&#8594;</button></div>
+              <div class="ni"><span class="nn">2.</span><input class="pi" id="p-cp1" placeholder="..."><button class="proj-link" onclick="goToProject(document.getElementById('p-cp1').value)" title="Open project page">&#8594;</button></div>
+              <div class="ni"><span class="nn">3.</span><input class="pi" id="p-cp2" placeholder="..."><button class="proj-link" onclick="goToProject(document.getElementById('p-cp2').value)" title="Open project page">&#8594;</button></div>
+              <div class="ni"><span class="nn">4.</span><input class="pi" id="p-cp3" placeholder="..."><button class="proj-link" onclick="goToProject(document.getElementById('p-cp3').value)" title="Open project page">&#8594;</button></div>
+              <div class="ni"><span class="nn">5.</span><input class="pi" id="p-cp4" placeholder="..."><button class="proj-link" onclick="goToProject(document.getElementById('p-cp4').value)" title="Open project page">&#8594;</button></div>
             </div>
             <div>
-              <div class="ni"><span class="nn">6.</span><input class="pi" id="p-cp5" placeholder="..."></div>
-              <div class="ni"><span class="nn">7.</span><input class="pi" id="p-cp6" placeholder="..."></div>
-              <div class="ni"><span class="nn">8.</span><input class="pi" id="p-cp7" placeholder="..."></div>
-              <div class="ni"><span class="nn">9.</span><input class="pi" id="p-cp8" placeholder="..."></div>
-              <div class="ni"><span class="nn">10.</span><input class="pi" id="p-cp9" placeholder="..."></div>
+              <div class="ni"><span class="nn">6.</span><input class="pi" id="p-cp5" placeholder="..."><button class="proj-link" onclick="goToProject(document.getElementById('p-cp5').value)" title="Open project page">&#8594;</button></div>
+              <div class="ni"><span class="nn">7.</span><input class="pi" id="p-cp6" placeholder="..."><button class="proj-link" onclick="goToProject(document.getElementById('p-cp6').value)" title="Open project page">&#8594;</button></div>
+              <div class="ni"><span class="nn">8.</span><input class="pi" id="p-cp7" placeholder="..."><button class="proj-link" onclick="goToProject(document.getElementById('p-cp7').value)" title="Open project page">&#8594;</button></div>
+              <div class="ni"><span class="nn">9.</span><input class="pi" id="p-cp8" placeholder="..."><button class="proj-link" onclick="goToProject(document.getElementById('p-cp8').value)" title="Open project page">&#8594;</button></div>
+              <div class="ni"><span class="nn">10.</span><input class="pi" id="p-cp9" placeholder="..."><button class="proj-link" onclick="goToProject(document.getElementById('p-cp9').value)" title="Open project page">&#8594;</button></div>
             </div>
           </div>
         </div>
@@ -291,6 +307,20 @@ input.kii:focus{border-bottom-color:var(--blue)}
   </div>
 </div>
 
+<!-- PROJECTS -->
+<div id="vprojects" class="view">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+    <h2 style="font-size:15px;font-weight:600">Projects</h2>
+    <span style="font-size:11px;color:var(--gray)">Manage project tasks and push them to your daily planner</span>
+  </div>
+  <div class="proj-layout">
+    <div class="psb card" id="proj-sb"></div>
+    <div class="pmain card" id="proj-main">
+      <div class="hempty">Select a project from the list</div>
+    </div>
+  </div>
+</div>
+
 <!-- HISTORY -->
 <div id="vhist" class="view">
   <div style="display:flex;align-items:center;gap:12px">
@@ -305,6 +335,14 @@ input.kii:focus{border-bottom-color:var(--blue)}
 
 <script>
 var ST=8, ET=20, NHRS=ET-ST;
+var SK_PT='boa_proj_tasks';
+var curProj=null;
+function ldPT(){try{return JSON.parse(localStorage.getItem(SK_PT))||{};}catch(e){return{};}}
+function svPT(pt){localStorage.setItem(SK_PT,JSON.stringify(pt));}
+function getProjNames(){
+  var plans=ldP();var p=plans[tod()]||{};
+  return (p.currentProjects||[]).filter(function(n){return n&&n.trim();});
+}
 var KPIS=['Sales','Marketing','Strategic','Client Delivery','Training','Mindset'];
 var PO={A:0,B:1,C:2,D:3,E:4};
 var SK_T='boa_tasks', SK_P='boa_planners';
@@ -730,14 +768,21 @@ function showView(name){
   document.getElementById('v'+name).classList.add('on');
   document.getElementById('btn-today').classList.toggle('act',name==='today');
   document.getElementById('btn-history').classList.toggle('act',name==='history');
+  document.getElementById('btn-projects').classList.toggle('act',name==='projects');
   if(name==='history'){
     renderHist();
-    // Auto-select first (most recent) day
     setTimeout(function(){
       var first=document.querySelector('.hday');
       if(first){first.classList.add('act');viewDay(first.dataset.date);}
     },50);
   }
+  if(name==='projects') renderProjects();
+}
+function goToProject(name){
+  if(!name||!name.trim())return;
+  curProj=name.trim();
+  showView('projects');
+  document.getElementById('btn-projects').classList.add('act');
 }
 function renderHist(){
   var plans=ldP();var dates=Object.keys(plans).sort(function(a,b){return b.localeCompare(a);});
@@ -939,6 +984,119 @@ function importData(){
     reader.readAsText(file);
   };
   input.click();
+}
+
+
+// ── PROJECTS ─────────────────────────────────────────────────
+function renderProjects(){
+  var names=getProjNames();var pt=ldPT();
+  var sb=document.getElementById('proj-sb');
+  if(!names.length){
+    sb.innerHTML='<div style="padding:20px;text-align:center;color:var(--gray);font-size:12px">No projects yet.<br>Add them in <strong>Today &rarr; Current Projects</strong>.</div>';
+    document.getElementById('proj-main').innerHTML='<div class="hempty">No projects yet</div>';
+    return;
+  }
+  sb.innerHTML=names.map(function(name){
+    var tasks=pt[name]||[];
+    return '<div class="pitem" data-proj="'+esc(name)+'">'
+      +'<span class="piname">'+esc(name)+'</span>'
+      +(tasks.length?'<span class="picnt">'+tasks.length+'</span>':'')
+      +'</div>';
+  }).join('');
+  sb.querySelectorAll('.pitem').forEach(function(el){
+    el.addEventListener('click',function(){
+      sb.querySelectorAll('.pitem').forEach(function(i){i.classList.remove('act');});
+      this.classList.add('act');curProj=this.dataset.proj;renderProjMain();
+    });
+  });
+  // Select current or first
+  var toSelect=curProj&&names.indexOf(curProj)!==-1?curProj:names[0];
+  var el=sb.querySelector('[data-proj="'+esc(toSelect)+'"]');
+  if(el){el.classList.add('act');curProj=toSelect;renderProjMain();}
+}
+
+function renderProjMain(){
+  var pt=ldPT();var tasks=pt[curProj]||[];
+  var main=document.getElementById('proj-main');
+  main.innerHTML='<div class="ch">'+esc(curProj)
+    +'<span style="font-size:10px;font-weight:400;opacity:.7">'+tasks.length+' task'+(tasks.length!==1?'s':'')+'</span></div>'
+    +'<div class="padd">'
+      +'<input id="pt-inp" placeholder="Add a task for this project..." style="flex:1">'
+      +'<input id="pt-note" placeholder="Notes..." style="width:160px">'
+      +'<button class="btn bp" id="pt-addbtn">+ Add</button>'
+    +'</div>'
+    +'<div id="pt-list"></div>';
+  document.getElementById('pt-addbtn').addEventListener('click',addProjTask);
+  document.getElementById('pt-inp').addEventListener('keydown',function(e){if(e.key==='Enter')addProjTask();});
+  renderProjTasks();
+}
+
+function renderProjTasks(){
+  var pt=ldPT();var tasks=pt[curProj]||[];
+  var list=document.getElementById('pt-list');if(!list)return;
+  if(!tasks.length){list.innerHTML='<div class="emsg">No tasks yet &mdash; add one above</div>';return;}
+  list.innerHTML='<table><thead><tr>'
+    +'<th>TASK</th><th style="width:160px">NOTES</th><th style="width:90px">STATUS</th><th style="width:115px"></th><th style="width:26px"></th>'
+    +'</tr></thead><tbody>'
+    +tasks.map(function(t){
+      var added=t.addedToPlanner;
+      return '<tr>'
+        +'<td><input class="ii" value="'+esc(t.item||'')+'" placeholder="Task..." data-ptid="'+t.id+'" data-field="item" onchange="updPT(this)"></td>'
+        +'<td><input class="ii" value="'+esc(t.notes||'')+'" placeholder="..." data-ptid="'+t.id+'" data-field="notes" onchange="updPT(this)"></td>'
+        +'<td>'+(added?'<span class="in-planner">&#10003; In Planner</span>':'<span style="font-size:10px;color:var(--gray)">&mdash;</span>')+'</td>'
+        +'<td>'+(added
+          ?'<span class="btn-added">&#10003; Added</span>'
+          :'<button class="btn bp bsm" data-ptid="'+t.id+'" style="font-size:10px;white-space:nowrap">+ Add to Planner</button>'
+        )+'</td>'
+        +'<td><button class="btn bsm bd" data-del="'+t.id+'">&#215;</button></td>'
+        +'</tr>';
+    }).join('')
+    +'</tbody></table>';
+  list.querySelectorAll('button[data-ptid]').forEach(function(btn){
+    btn.addEventListener('click',function(){addToPlanner(this.dataset.ptid);});
+  });
+  list.querySelectorAll('button[data-del]').forEach(function(btn){
+    btn.addEventListener('click',function(){delPT(this.dataset.del);});
+  });
+}
+
+function addProjTask(){
+  var inp=document.getElementById('pt-inp');
+  var noteInp=document.getElementById('pt-note');
+  var item=(inp.value||'').trim();if(!item||!curProj)return;
+  var pt=ldPT();if(!pt[curProj])pt[curProj]=[];
+  pt[curProj].push({id:uid(),item:item,notes:(noteInp.value||'').trim(),addedToPlanner:false,addedDate:null});
+  svPT(pt);inp.value='';noteInp.value='';
+  renderProjects();setTimeout(function(){document.getElementById('pt-inp').focus();},50);
+}
+
+function updPT(el){
+  var pt=ldPT();if(!pt[curProj])return;
+  var t=pt[curProj].filter(function(t){return t.id===el.dataset.ptid;})[0];
+  if(t){t[el.dataset.field]=el.value;svPT(pt);}
+}
+
+function delPT(id){
+  if(!confirm('Delete this task?'))return;
+  var pt=ldPT();if(!pt[curProj])return;
+  pt[curProj]=pt[curProj].filter(function(t){return t.id!==id;});
+  svPT(pt);renderProjects();
+}
+
+function addToPlanner(ptId){
+  var pt=ldPT();var tasks=pt[curProj]||[];
+  var ptTask=tasks.filter(function(t){return t.id===ptId;})[0];
+  if(!ptTask)return;
+  var allTasks=ldT();
+  allTasks.push({id:uid(),priority:'B',order:1,item:ptTask.item,duration:1,
+    notes:ptTask.notes||'',status:'open',created:tod(),fromProject:curProj});
+  svT(allTasks);
+  ptTask.addedToPlanner=true;ptTask.addedDate=tod();
+  svPT(pt);
+  renderProjTasks();renderProjects();
+  // Flash confirmation
+  var btn=document.querySelector('button[data-ptid="'+ptId+'"]');
+  if(btn){btn.textContent='Added!';btn.style.background='#D1FAE5';}
 }
 
 window.addEventListener('DOMContentLoaded',init);
