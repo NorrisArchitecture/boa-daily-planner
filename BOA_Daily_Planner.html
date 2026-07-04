@@ -473,22 +473,28 @@ function renderTasks(){
   var empty=document.getElementById('tempty');
   var open=tasks.filter(function(t){return t.status==='open';});
   var ndone=tasks.filter(function(t){return t.status==='completed';}).length;
-  var sorted=sortT(open);
+  // Show open tasks first, then completed tasks
+  var sorted=sortT(open).concat(sortT(tasks.filter(function(t){return t.status==='completed';})));
   document.getElementById('tstat').innerHTML='<b>'+open.length+'</b> open &nbsp;&#183;&nbsp; <b>'+ndone+'</b> done';
   document.getElementById('thc').textContent=tasks.length?tasks.length+' tasks':'';
-  if(!open.length){body.innerHTML='';empty.style.display='block';return;}
+  if(!tasks.length){body.innerHTML='';empty.style.display='block';return;}
   empty.style.display='none';
   var rows='';
   sorted.forEach(function(t){
+    var isDone=t.status==='completed';
+    var rowStyle=isDone?'background:#F9FAFB;':'';
+    var txtStyle=isDone?'text-decoration:line-through;color:#9CA3AF;':'';
     var priOpts=['A','B','C','D','E'].map(function(p){return '<option value="'+p+'"'+(t.priority===p?' selected':'')+'>'+p+'</option>';}).join('');
     var durOpts=DUR_OPTS.map(function(d){return '<option value="'+d+'"'+(parseFloat(t.duration)===d?' selected':'')+'>'+fmtDur(d)+'</option>';}).join('');
-    rows+='<tr id="tr-'+t.id+'">'
-      +'<td><select class="is p'+t.priority+'" data-id="'+t.id+'" data-field="priority">'+priOpts+'</select></td>'
-      +'<td><input class="ii" style="width:26px;text-align:center" value="'+esc(t.order||'')+'" placeholder="1" data-id="'+t.id+'" data-field="order"></td>'
-      +'<td><input class="ii" value="'+esc(t.item||'')+'" placeholder="Task description..." data-id="'+t.id+'" data-field="item"></td>'
-      +'<td><select class="is" data-id="'+t.id+'" data-field="duration">'+durOpts+'</select></td>'
-      +'<td><input class="ii" value="'+esc(t.notes||'')+'" placeholder="..." data-id="'+t.id+'" data-field="notes"></td>'
-      +'<td><button class="stb sopen" data-id="'+t.id+'" data-action="toggle">&#9675; Open</button></td>'
+    rows+='<tr id="tr-'+t.id+'" style="'+rowStyle+'">'
+      +'<td><select class="is p'+t.priority+'" data-id="'+t.id+'" data-field="priority"'+(isDone?' disabled':'')+'>'+priOpts+'</select></td>'
+      +'<td><input class="ii" style="width:26px;text-align:center;'+txtStyle+'" value="'+esc(t.order||'')+'" placeholder="1" data-id="'+t.id+'" data-field="order"'+(isDone?' disabled':'')+' ></td>'
+      +'<td><input class="ii" style="'+txtStyle+'" value="'+esc(t.item||'')+'" placeholder="Task description..." data-id="'+t.id+'" data-field="item"'+(isDone?' disabled':'')+' ></td>'
+      +'<td><select class="is" data-id="'+t.id+'" data-field="duration"'+(isDone?' disabled':'')+'>'+durOpts+'</select></td>'
+      +'<td><input class="ii" style="'+txtStyle+'" value="'+esc(t.notes||'')+'" placeholder="..." data-id="'+t.id+'" data-field="notes"'+(isDone?' disabled':'')+' ></td>'
+      +'<td>'+(isDone
+        ?'<button class="stb sdone" data-id="'+t.id+'" data-action="toggle">&#10003; Done</button>'
+        :'<button class="stb sopen" data-id="'+t.id+'" data-action="toggle">&#9675; Open</button>')+'</td>'
       +'<td><button class="btn bsm bd" data-id="'+t.id+'" data-action="delete">&#215;</button></td>'
       +'</tr>';
   });
@@ -808,7 +814,12 @@ function renderProjTasks(){
         +'<td><span class="pt-seq">'+(idx+1)+'</span></td>'
         +'<td><input class="ii" value="'+esc(t.item||'')+'" placeholder="Task..." data-ptid="'+t.id+'" data-field="item" onchange="updPT(this)"></td>'
         +'<td><input class="ii" value="'+esc(t.notes||'')+'" placeholder="..." data-ptid="'+t.id+'" data-field="notes" onchange="updPT(this)"></td>'
-        +'<td>'+(added?'<span class="in-planner">&#10003; In Planner</span>':'<span style="font-size:10px;color:var(--gray)">&mdash;</span>')+'</td>'
+        +'<td>'+(function(){
+          if(!added) return '<span style="font-size:10px;color:var(--gray)">&mdash;</span>';
+          var plannerTask=ldT().filter(function(x){return x.ptId===t.id||(x.fromProject===curProj&&x.item===t.item);})[0];
+          if(plannerTask&&plannerTask.status==='completed') return '<span style="font-size:10px;color:#059669">&#10003; Completed</span>';
+          return '<span class="in-planner">&#10003; In Planner</span>';
+        })()+'</td>'
         +'<td>'+(added
           ?'<button class="btn bsm" data-removeid="'+t.id+'" style="font-size:10px;background:#F0FDF4;border:1px solid #BBF7D0;color:#059669;white-space:nowrap" title="Click to remove from planner">&#10003; Added &mdash; Remove</button>'
           :'<button class="btn bp bsm" data-ptid="'+t.id+'" style="font-size:10px;white-space:nowrap">+ Add to Planner</button>')+'</td>'
