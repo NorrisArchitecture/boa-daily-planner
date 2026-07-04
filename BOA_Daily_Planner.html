@@ -841,13 +841,16 @@ function addToPlanner(ptId){
 }
 
 function removeFromPlanner(ptId){
-  // Remove the planner task and reset project task status
   var pt=ldPT();var tasks=pt[curProj]||[];
   var ptTask=tasks.filter(function(t){return t.id===ptId;})[0];if(!ptTask)return;
-  // Remove from main task list
-  var allTasks=ldT().filter(function(t){return t.ptId!==ptId;});
+  // Remove from main task list — match by ptId OR by item text + fromProject
+  var allTasks=ldT();
+  allTasks=allTasks.filter(function(t){
+    if(t.ptId===ptId) return false;
+    if(t.fromProject===curProj&&t.item===ptTask.item) return false;
+    return true;
+  });
   svT(allTasks);
-  // Reset project task
   ptTask.addedToPlanner=false;ptTask.addedDate=null;ptTask.plannerTaskId=null;
   svPT(pt);
   renderAll();renderProjTasks();renderProjects();
