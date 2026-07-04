@@ -625,7 +625,19 @@ function toggleSt(id){
 }
 function delTask(id){
   if(!confirm('Delete this task?'))return;
-  svT(ldT().filter(function(t){return t.id!==id;}));renderAll();
+  var tasks=ldT();
+  var t=tasks.filter(function(x){return x.id===id;})[0];
+  // If this task came from a project, reset that project task's added status
+  if(t&&t.fromProject&&t.ptId){
+    var pt=ldPT();
+    if(pt[t.fromProject]){
+      var ptTask=pt[t.fromProject].filter(function(p){return p.id===t.ptId;})[0];
+      if(ptTask){ptTask.addedToPlanner=false;ptTask.addedDate=null;ptTask.plannerTaskId=null;svPT(pt);}
+    }
+  }
+  svT(tasks.filter(function(x){return x.id!==id;}));
+  renderAll();
+  if(curProj) renderProjTasks();
 }
 function clearDone(){
   var tasks=ldT();var open=tasks.filter(function(t){return t.status==='open';});
@@ -788,12 +800,14 @@ function renderProjTasks(){
         +'<td><input class="ii" value="'+esc(t.item||'')+'" placeholder="Task..." data-ptid="'+t.id+'" data-field="item" onchange="updPT(this)"></td>'
         +'<td><input class="ii" value="'+esc(t.notes||'')+'" placeholder="..." data-ptid="'+t.id+'" data-field="notes" onchange="updPT(this)"></td>'
         +'<td>'+(added?'<span class="in-planner">&#10003; In Planner</span>':'<span style="font-size:10px;color:var(--gray)">&mdash;</span>')+'</td>'
-        +'<td>'+(added?'<span class="btn-added">&#10003; Added</span>'
+        +'<td>'+(added
+          ?'<button class="btn bsm" data-removeid="'+t.id+'" style="font-size:10px;background:#F0FDF4;border:1px solid #BBF7D0;color:#059669;white-space:nowrap" title="Click to remove from planner">&#10003; Added &mdash; Remove</button>'
           :'<button class="btn bp bsm" data-ptid="'+t.id+'" style="font-size:10px;white-space:nowrap">+ Add to Planner</button>')+'</td>'
         +'<td><button class="btn bsm bd" data-del="'+t.id+'">&#215;</button></td>'
         +'</tr>';
     }).join('')+'</tbody></table>';
   list.querySelectorAll('button[data-ptid]').forEach(function(btn){btn.addEventListener('click',function(){addToPlanner(this.dataset.ptid);});});
+  list.querySelectorAll('button[data-removeid]').forEach(function(btn){btn.addEventListener('click',function(){removeFromPlanner(this.dataset.removeid);});});
   list.querySelectorAll('button[data-del]').forEach(function(btn){btn.addEventListener('click',function(){delPT(this.dataset.del);});});
 }
 function addProjTask(){
@@ -819,9 +833,23 @@ function addToPlanner(ptId){
   var pt=ldPT();var tasks=pt[curProj]||[];
   var ptTask=tasks.filter(function(t){return t.id===ptId;})[0];if(!ptTask)return;
   var allTasks=ldT();
-  allTasks.push({id:uid(),priority:'B',order:1,item:ptTask.item,duration:1,notes:ptTask.notes||'',status:'open',created:tod(),fromProject:curProj});
+  var newTaskId=uid();
+  allTasks.push({id:newTaskId,priority:'B',order:1,item:ptTask.item,duration:1,notes:ptTask.notes||'',status:'open',created:tod(),fromProject:curProj,ptId:ptTask.id});
   svT(allTasks);
-  ptTask.addedToPlanner=true;ptTask.addedDate=tod();svPT(pt);
+  ptTask.addedToPlanner=true;ptTask.addedDate=tod();ptTask.plannerTaskId=newTaskId;svPT(pt);
+  renderAll();renderProjTasks();renderProjects();
+}
+
+function removeFromPlanner(ptId){
+  // Remove the planner task and reset project task status
+  var pt=ldPT();var tasks=pt[curProj]||[];
+  var ptTask=tasks.filter(function(t){return t.id===ptId;})[0];if(!ptTask)return;
+  // Remove from main task list
+  var allTasks=ldT().filter(function(t){return t.ptId!==ptId;});
+  svT(allTasks);
+  // Reset project task
+  ptTask.addedToPlanner=false;ptTask.addedDate=null;ptTask.plannerTaskId=null;
+  svPT(pt);
   renderAll();renderProjTasks();renderProjects();
 }
 
