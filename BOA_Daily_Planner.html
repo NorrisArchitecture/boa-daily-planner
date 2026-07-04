@@ -851,7 +851,7 @@ function syncOutlook() {
   btn.textContent = 'Syncing...';
   btn.disabled = true;
 
-  fetch(CORS_PROXY + encodeURIComponent(ICS_URL))
+  fetch(CORS_PROXY + encodeURIComponent(ICS_URL + '?t=' + Date.now()), {cache: 'no-store'})
     .then(function(r) { return r.text(); })
     .then(function(text) {
       var events = parseICS(text);
