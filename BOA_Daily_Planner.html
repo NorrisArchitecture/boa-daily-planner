@@ -315,7 +315,7 @@ function ldT(){try{return JSON.parse(localStorage.getItem(SK_T))||[];}catch(e){r
 function svT(t){localStorage.setItem(SK_T,JSON.stringify(t));}
 function ldP(){try{return JSON.parse(localStorage.getItem(SK_P))||{};}catch(e){return {};}}
 function svP(p){localStorage.setItem(SK_P,JSON.stringify(p));}
-function tod(){return new Date().toISOString().slice(0,10);}
+function tod(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36);}
 function fmtLong(s){return new Date(s+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});}
 function fmtShort(s){return new Date(s+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});}
