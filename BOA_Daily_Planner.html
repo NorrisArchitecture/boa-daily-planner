@@ -297,7 +297,7 @@ input.kii:focus{border-bottom-color:var(--blue)}
     <h2 style="font-size:15px;font-weight:600">History</h2>
     <span style="font-size:11px;color:var(--gray)">Click any day to review</span>
   </div>
-  <div class="hlist">
+  <div class="hlist" style="min-height:400px">
     <div class="hsbar card" id="hsbar"></div>
     <div class="hcont card" id="hcont"><div class="hempty">Select a day from the list</div></div>
   </div>
@@ -447,7 +447,7 @@ function renderTasks(){
   var tasks=ldT();
   var body=document.getElementById('ttbody');
   var empty=document.getElementById('tempty');
-  var sorted=sortT(tasks);
+  var sorted=sortT(tasks.filter(function(t){return t.status==='open';}));
   var nopen=tasks.filter(function(t){return t.status==='open';}).length;
   var ndone=tasks.filter(function(t){return t.status==='completed';}).length;
   document.getElementById('tstat').innerHTML='<b>'+nopen+'</b> open &nbsp;&#183;&nbsp; <b>'+ndone+'</b> done';
@@ -720,12 +720,19 @@ function showView(name){
   document.getElementById('v'+name).classList.add('on');
   document.getElementById('btn-today').classList.toggle('act',name==='today');
   document.getElementById('btn-history').classList.toggle('act',name==='history');
-  if(name==='history')renderHist();
+  if(name==='history'){
+    renderHist();
+    // Auto-select first (most recent) day
+    setTimeout(function(){
+      var first=document.querySelector('.hday');
+      if(first){first.classList.add('act');viewDay(first.dataset.date);}
+    },50);
+  }
 }
 function renderHist(){
   var plans=ldP();var dates=Object.keys(plans).sort(function(a,b){return b.localeCompare(a);});
   var sb=document.getElementById('hsbar');
-  if(!dates.length){sb.innerHTML='<div style="padding:20px;text-align:center;color:var(--gray);font-size:12px">No history yet</div>';return;}
+  if(!dates.length){sb.innerHTML='<div style="padding:20px;text-align:center;color:var(--gray);font-size:12px">No history yet — your days will appear here as you use the planner.</div>';return;}
   var tasks=ldT();
   sb.innerHTML=dates.map(function(d){
     var p=plans[d];
