@@ -183,6 +183,8 @@ input.kii:focus{border-bottom-color:var(--blue)}
   <nav>
     <button class="nb act" id="btn-today" onclick="showView('today')">Today</button>
     <button class="nb" id="btn-history" onclick="showView('history')">History</button>
+    <button class="nb" onclick="exportData()" title="Export your data to move between devices" style="font-size:10px">&#8681; Export Data</button>
+    <button class="nb" onclick="importData()" title="Import data from another device" style="font-size:10px">&#8679; Import Data</button>
   </nav>
 </header>
 
@@ -792,11 +794,7 @@ var CORS_PROXY = 'https://corsproxy.io/?';
 
 function parseICS(text) {
   var events = [];
-  var lines = text.replace(/
- /g, '').replace(/
-/g, '
-').split('
-');
+  var lines = text.split(/\r?\n/);
   var current = null;
   var today = tod();
 
@@ -896,6 +894,40 @@ function syncOutlook() {
       btn.textContent = 'Sync Outlook';
       btn.disabled = false;
     });
+}
+
+
+// ── EXPORT / IMPORT DATA ────────────────────────────────────
+function exportData(){
+  var data={tasks:ldT(),planners:ldP()};
+  var json=JSON.stringify(data,null,2);
+  var blob=new Blob([json],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  a.download='boa_planner_data_'+tod()+'.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function importData(){
+  var input=document.createElement('input');
+  input.type='file';input.accept='.json';
+  input.onchange=function(e){
+    var file=e.target.files[0];
+    if(!file)return;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      try{
+        var data=JSON.parse(ev.target.result);
+        if(data.tasks)svT(data.tasks);
+        if(data.planners)svP(data.planners);
+        renderAll();loadPlanUI(tod());
+        alert('Data imported successfully!');
+      }catch(err){alert('Invalid data file.');}
+    };
+    reader.readAsText(file);
+  };
+  input.click();
 }
 
 window.addEventListener('DOMContentLoaded',init);
