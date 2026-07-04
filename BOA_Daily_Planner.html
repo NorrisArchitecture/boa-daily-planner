@@ -796,54 +796,48 @@ function parseICS(text) {
   var events = [];
   var lines = text.split(/\r?\n/);
   var current = null;
-  var today = tod();
 
   lines.forEach(function(line) {
     if (line === 'BEGIN:VEVENT') {
       current = {};
     } else if (line === 'END:VEVENT' && current) {
-      if (current.start && current.summary) {
-        // Check if event is today
-        var eventDate = current.start.slice(0, 8);
-        var todayFormatted = today.replace(/-/g, '');
-        if (eventDate === todayFormatted) {
-          var startHour = parseInt(current.start.slice(9, 11));
-          // Convert from UTC to local (approximate - Eastern is UTC-4 or UTC-5)
-          var offset = new Date().getTimezoneOffset() / 60;
-          startHour = startHour - offset;
-          if (startHour < 0) startHour += 24;
-          if (startHour >= 24) startHour -= 24;
-
-          var endHour = startHour + 1;
-          if (current.end) {
-            var eHour = parseInt(current.end.slice(9, 11)) - offset;
-            if (eHour < 0) eHour += 24;
-            endHour = eHour;
-          }
-          var dur = endHour - startHour;
-          if (dur < 1) dur = 1;
-          if (dur > 8) dur = 8;
-          if (startHour >= ST && startHour < ET) {
-            events.push({
-              name: current.summary,
-              startHour: startHour,
-              duration: Math.round(dur)
-            });
-          }
-        }
+      if (current.startDate && current.summary && current.startHour != null) {
+        events.push({name:current.summary,startHour:current.startHour,
+          duration:current.duration||1,date:current.startDate});
       }
       current = null;
     } else if (current) {
-      if (line.startsWith('DTSTART')) {
-        current.start = line.split(':').pop().replace(/[TZ]/g, '');
-      } else if (line.startsWith('DTEND')) {
-        current.end = line.split(':').pop().replace(/[TZ]/g, '');
-      } else if (line.startsWith('SUMMARY')) {
-        current.summary = line.split(':').slice(1).join(':').trim();
+      if (line.indexOf('DTSTART') === 0) {
+        var val=line.split(':').pop().trim();
+        var dt=parseOutlookDate(val);
+        if(dt){current.startDate=dt.date;current.startHour=dt.hour;}
+      } else if (line.indexOf('DTEND') === 0) {
+        var val=line.split(':').pop().trim();
+        var dt=parseOutlookDate(val);
+        if(dt&&current.startHour!=null){
+          current.duration=dt.hour-current.startHour;
+          if(current.duration<1)current.duration=1;
+          if(current.duration>8)current.duration=8;
+        }
+      } else if (line.indexOf('SUMMARY') === 0) {
+        current.summary=line.split(':').slice(1).join(':').trim();
       }
     }
   });
-  return events;
+  var today=tod();
+  return events.filter(function(e){return e.date===today&&e.startHour>=ST&&e.startHour<ET;});
+}
+
+function parseOutlookDate(val) {
+  var isUTC=val.slice(-1)==='Z';
+  var year=parseInt(val.slice(0,4));
+  var month=parseInt(val.slice(4,6))-1;
+  var day=parseInt(val.slice(6,8));
+  var hour=parseInt(val.slice(9,11));
+  var min=parseInt(val.slice(11,13));
+  var d=isUTC?new Date(Date.UTC(year,month,day,hour,min,0)):new Date(year,month,day,hour,min,0);
+  var localDate=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  return {date:localDate,hour:d.getHours()};
 }
 
 function syncOutlook() {
