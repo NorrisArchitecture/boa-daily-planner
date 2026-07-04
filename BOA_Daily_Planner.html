@@ -101,10 +101,11 @@ input.pi::placeholder{color:#D1D5DB}
 /* SCHEDULE */
 .shead{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--gl)}
 .stitle{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gray)}
-.sslot{display:flex;align-items:stretch;min-height:34px;border-bottom:1px solid #F3F4F6;position:relative}
+.sslot{display:flex;align-items:stretch;min-height:26px;border-bottom:1px solid #F3F4F6;position:relative}
 .sslot:last-child{border-bottom:none}
 .stime{font-family:var(--m);font-size:9px;color:var(--gray);width:56px;flex-shrink:0;display:flex;align-items:center;padding:0 8px;background:var(--gxl);border-right:2px solid var(--gl)}
 .stime.hm{color:var(--blue);font-weight:500}
+.stime.half{color:var(--gray);font-size:8px}
 .scont{flex:1;display:flex;align-items:center;padding:3px 7px;gap:5px;min-width:0}
 .sact{display:flex;align-items:center;padding:0 5px;gap:3px;opacity:0;transition:opacity .15s}
 .sslot:hover .sact{opacity:1}
@@ -387,11 +388,13 @@ function buildSched(tasks, meetings){
 
   // Place meetings
   (meetings||[]).forEach(function(m){
-    for(var h=0;h<m.duration;h++){
-      var idx=m.startHour-ST+h;
+    var startSlot=Math.round((m.startHour-ST)*2);
+    var numSlots=Math.round(m.duration*2);
+    for(var h=0;h<numSlots;h++){
+      var idx=startSlot+h;
       if(idx>=0&&idx<NHRS){
         slots[idx].content={type:'meeting',id:m.id,name:m.name,
-          isFirst:h===0,isLast:h===m.duration-1,dur:m.duration,part:h+1};
+          isFirst:h===0,isLast:h===numSlots-1,dur:m.duration,part:h+1};
       }
     }
   });
@@ -416,7 +419,8 @@ function buildSched(tasks, meetings){
   var open=sortT(tasks.filter(function(t){return t.status==='open';}));
   var overflow=[];
   open.forEach(function(task){
-    var needed=parseInt(task.duration)||1;
+    var durHrs=parseFloat(task.duration)||1;
+    var needed=Math.round(durHrs*2);  // slots needed (each slot = 30 min)
     var placed=0;
     for(var i=0;i<NHRS&&placed<needed;i++){
       if(!slots[i].content){
@@ -431,7 +435,7 @@ function buildSched(tasks, meetings){
       }
     }
     if(placed<needed){
-      overflow.push({task:task,placedHrs:placed,ovfHrs:needed-placed});
+      overflow.push({task:task,placedHrs:placed*0.5,ovfHrs:(needed-placed)*0.5});
     }
   });
   return {slots:slots,overflow:overflow};
@@ -508,8 +512,8 @@ function renderTasks(){
     var priOpts=['A','B','C','D','E'].map(function(p){
       return '<option value="'+p+'"'+(t.priority===p?' selected':'')+'>'+p+'</option>';
     }).join('');
-    var durOpts=[1,2,3,4,5,6,7,8].map(function(d){
-      return '<option value="'+d+'"'+(parseInt(t.duration)===d?' selected':'')+'>'+(d===1?'1 hr':d+' hrs')+'</option>';
+    var durOpts=DUR_OPTS.map(function(d){
+      return '<option value="'+d+'"'+(parseFloat(t.duration)===d?' selected':'')+'>'+fmtDur(d)+'</option>';
     }).join('');
     rows+='<tr class="'+(isDone?'done':'')+'" id="tr-'+t.id+'">'
       +'<td><select class="is p'+t.priority+'" data-id="'+t.id+'" data-field="priority">'+priOpts+'</select></td>'
@@ -553,7 +557,8 @@ function renderSched(){
   slots.forEach(function(slot){
     var row=document.createElement('div');
     row.className='sslot'+(slot.hour>=17?' afters':'');
-    var timeHtml='<div class="stime hm">'+fmtHr(slot.hour)+'</div>';
+    var isHalf=slot.hour%1!==0;
+    var timeHtml='<div class="stime '+(isHalf?'half':'hm')+'">'+fmtHr(slot.hour)+'</div>';
     var contHtml='';var actHtml='';
     var c=slot.content;
 
@@ -576,7 +581,9 @@ function renderSched(){
         ?'<span style="'+strikeSt+'">'+esc(t.item||'Untitled')+'</span>'
         :'<span style="font-size:10px;color:var(--gray);font-style:italic;'+strikeSt+'">&#8597; '+esc(t.item||'Untitled')+'</span>';
       var chk=isDone&&c.isFirst?'<span style="color:#059669;font-size:11px;margin-right:2px">&#10003;</span>':'';
-      var hrsHtml=c.isFirst?'<span class="tbhrs" style="'+(isDone?'opacity:.4':'')+'">'+c.placed+(c.placed===1?' hr':' hrs')+(c.needed>c.placed?' of '+c.needed:'')+'</span>':'';
+      var pHrs=(c.placed*0.5);var nHrs=(c.needed*0.5);
+      var pLbl=pHrs===0.5?'30m':pHrs+'hr';var nLbl=nHrs===0.5?'30m':nHrs+'hr';
+      var hrsHtml=c.isFirst?'<span class="tbhrs" style="'+(isDone?'opacity:.4':'')+'">'+pLbl+(c.needed>c.placed?' of '+nLbl:'')+'</span>':'';
       contHtml='<div class="tb tb'+t.priority+'" style="'+sty+'">'
         +'<span class="pb p'+t.priority+'">'+t.priority+'</span>'
         +chk
@@ -600,9 +607,9 @@ function renderSched(){
       var form=document.createElement('div');
       form.className='mform';
       var hrOpts='';
-      for(var h=ST;h<ET;h++) hrOpts+='<option value="'+h+'"'+(h===slot.hour?' selected':'')+'>'+fmtHr(h)+'</option>';
+      for(var h=ST;h<ET;h+=0.5) hrOpts+='<option value="'+h+'"'+(h===slot.hour?' selected':'')+'>'+fmtHr(h)+'</option>';
       var durOpts='';
-      [1,2,3,4,5,6,7,8].forEach(function(d){durOpts+='<option value="'+d+'">'+(d===1?'1 hr':d+' hrs')+'</option>';});
+      DUR_OPTS.forEach(function(d){durOpts+='<option value="'+d+'">'+fmtDur(d)+'</option>';});
       form.innerHTML='<label>Meeting</label><input id="mname" placeholder="Meeting name..." style="min-width:130px">'
         +'<label>Start</label><select id="mstart">'+hrOpts+'</select>'
         +'<label>Duration</label><select id="mdur">'+durOpts+'</select>'
@@ -636,7 +643,7 @@ function renderSched(){
       return '<div class="ovfi"><span class="pb p'+t.priority+'">'+t.priority+'</span>'
         +'<span>'+esc(t.item||'Untitled')+'</span>'
         +'<span style="margin-left:auto;font-family:var(--m);font-size:9px;color:#D97706">'
-        +(o.placedHrs>0?o.placedHrs+' hr partial &rarr; ':'')+o.ovfHrs+' hr'+(o.ovfHrs!==1?'s':'')+' tomorrow</span>'
+        +(o.placedHrs>0?fmtDur(o.placedHrs)+' partial &rarr; ':'')+fmtDur(o.ovfHrs)+' tomorrow</span>'
         +'</div>';
     }).join('');
   } else {
@@ -654,7 +661,7 @@ function renderPri(){
     return '<div class="prit">'
       +'<span class="pb p'+t.priority+'">'+t.priority+'</span>'
       +'<span class="prit-txt">'+esc(t.item||'Untitled')+'</span>'
-      +(t.duration?'<span class="prit-dur">'+(parseInt(t.duration)===1?'1hr':t.duration+'hr')+'</span>':'')
+      +(t.duration?'<span class="prit-dur">'+fmtDur(parseFloat(t.duration))+'</span>':'')
       +'</div>';
   }).join('');
 }
