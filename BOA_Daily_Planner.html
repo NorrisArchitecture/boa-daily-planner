@@ -266,7 +266,7 @@ input.kii:focus{border-bottom-color:var(--blue)}
       <div class="pcol" style="border-left:1px solid var(--gl)">
         <div class="shead">
           <span class="stitle">Schedule <span style="font-size:9px;font-weight:400;color:#9CA3AF">8 AM – 8 PM · auto-arranged</span></span>
-          <button class="bmtg" id="addmtgbtn">+ Add Meeting</button>
+          <div style="display:flex;gap:6px"><button class="bmtg" id="addmtgbtn">+ Add Meeting</button><button class="bmtg" id="syncbtn" onclick="syncOutlook()" style="background:#EFF6FF;border-color:#BFDBFE;color:#2563EB">&#8635; Sync Outlook</button></div>
         </div>
         <div id="sbody"></div>
       </div>
@@ -783,6 +783,119 @@ function roSched(entries){
   return '<div class="rosec"><div class="rot">Schedule</div><div class="rosg">'
     +entries.map(function(e){return '<div class="rosr"><span class="rost">'+e.time+'</span>'+esc(e.text)+'</div>';}).join('')
     +'</div></div>';
+}
+
+
+// ── OUTLOOK CALENDAR SYNC ────────────────────────────────────
+var ICS_URL = 'https://outlook.office365.com/owa/calendar/83f4b7029eca45b8bbbb33abdf249756@norrisarchitecture.com/a37fa18b2803434db604b5c5999ecd917912958408339169970/calendar.ics';
+var CORS_PROXY = 'https://corsproxy.io/?';
+
+function parseICS(text) {
+  var events = [];
+  var lines = text.replace(/
+ /g, '').replace(/
+/g, '
+').split('
+');
+  var current = null;
+  var today = tod();
+
+  lines.forEach(function(line) {
+    if (line === 'BEGIN:VEVENT') {
+      current = {};
+    } else if (line === 'END:VEVENT' && current) {
+      if (current.start && current.summary) {
+        // Check if event is today
+        var eventDate = current.start.slice(0, 8);
+        var todayFormatted = today.replace(/-/g, '');
+        if (eventDate === todayFormatted) {
+          var startHour = parseInt(current.start.slice(9, 11));
+          // Convert from UTC to local (approximate - Eastern is UTC-4 or UTC-5)
+          var offset = new Date().getTimezoneOffset() / 60;
+          startHour = startHour - offset;
+          if (startHour < 0) startHour += 24;
+          if (startHour >= 24) startHour -= 24;
+
+          var endHour = startHour + 1;
+          if (current.end) {
+            var eHour = parseInt(current.end.slice(9, 11)) - offset;
+            if (eHour < 0) eHour += 24;
+            endHour = eHour;
+          }
+          var dur = endHour - startHour;
+          if (dur < 1) dur = 1;
+          if (dur > 8) dur = 8;
+          if (startHour >= ST && startHour < ET) {
+            events.push({
+              name: current.summary,
+              startHour: startHour,
+              duration: Math.round(dur)
+            });
+          }
+        }
+      }
+      current = null;
+    } else if (current) {
+      if (line.startsWith('DTSTART')) {
+        current.start = line.split(':').pop().replace(/[TZ]/g, '');
+      } else if (line.startsWith('DTEND')) {
+        current.end = line.split(':').pop().replace(/[TZ]/g, '');
+      } else if (line.startsWith('SUMMARY')) {
+        current.summary = line.split(':').slice(1).join(':').trim();
+      }
+    }
+  });
+  return events;
+}
+
+function syncOutlook() {
+  var btn = document.getElementById('syncbtn');
+  btn.textContent = 'Syncing...';
+  btn.disabled = true;
+
+  fetch(CORS_PROXY + encodeURIComponent(ICS_URL))
+    .then(function(r) { return r.text(); })
+    .then(function(text) {
+      var events = parseICS(text);
+      if (!events.length) {
+        alert('No meetings found for today in your Outlook calendar.');
+        btn.textContent = 'Sync Outlook';
+        btn.disabled = false;
+        return;
+      }
+
+      var plans = ldP();
+      var today = tod();
+      if (!plans[today]) plans[today] = blankPlan(today);
+      if (!plans[today].meetings) plans[today].meetings = [];
+
+      // Remove previously synced meetings to avoid duplicates
+      plans[today].meetings = plans[today].meetings.filter(function(m) {
+        return !m.fromOutlook;
+      });
+
+      events.forEach(function(e) {
+        plans[today].meetings.push({
+          id: uid(),
+          name: e.name,
+          startHour: e.startHour,
+          duration: e.duration,
+          fromOutlook: true
+        });
+      });
+
+      svP(plans);
+      renderSched();
+      btn.textContent = 'Sync Outlook';
+      btn.disabled = false;
+      alert(events.length + ' meeting(s) synced from Outlook!');
+    })
+    .catch(function(err) {
+      alert('Could not reach Outlook calendar. Check your connection and try again.');
+      console.error(err);
+      btn.textContent = 'Sync Outlook';
+      btn.disabled = false;
+    });
 }
 
 window.addEventListener('DOMContentLoaded',init);
