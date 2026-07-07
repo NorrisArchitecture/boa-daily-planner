@@ -32,7 +32,7 @@ nav{display:flex;gap:4px;align-items:center}
 
 /* CARDS — no radius, flat */
 .card{background:#fff;border-radius:0;box-shadow:none;overflow:hidden;border-right:0.75px solid var(--gl)}
-.ch{background:var(--black);color:#fff;padding:9px 16px;font-size:7px;font-weight:400;letter-spacing:3px;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between}
+.ch{background:var(--black);color:#fff;padding:0 16px;font-size:7px;font-weight:400;letter-spacing:3px;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;height:36px;box-sizing:border-box}
 .ch.blue{background:var(--black)}
 
 /* BUTTONS */
@@ -261,9 +261,9 @@ footer{background:var(--black);height:30px;display:flex;align-items:center;justi
     <div class="ch">Daily Planner <span id="saveind" style="font-size:10px;font-weight:400;opacity:.85"></span></div>
     <div class="pmeta">
       <div class="mf"><span class="ml">Date</span><span class="mdate" id="pdate"></span></div>
-      <div class="mf"><span class="ml">Role</span><input class="pi" id="p-role" placeholder="Your role today..."></div>
-      <div class="mf full"><span class="ml">Purpose</span><input class="pi" id="p-purpose" placeholder="My purpose today is..."></div>
-      <div class="mf full"><span class="ml">Goals</span><input class="pi" id="p-goals" placeholder="What must I accomplish today?"></div>
+      <div class="mf"><span class="ml">Role</span><input class="pi" id="p-role" placeholder="Your role today..." spellcheck="true"></div>
+      <div class="mf full"><span class="ml">Purpose</span><input class="pi" id="p-purpose" placeholder="My purpose today is..." spellcheck="true"></div>
+      <div class="mf full"><span class="ml">Goals</span><input class="pi" id="p-goals" placeholder="What must I accomplish today?" spellcheck="true"></div>
     </div>
     <div class="pbody">
       <div class="pcol">
@@ -273,32 +273,32 @@ footer{background:var(--black);height:30px;display:flex;align-items:center;justi
         </div>
         <div class="ps">
           <div class="pst">I'm Grateful For</div>
-          <div class="ni"><span class="nn">1.</span><input class="pi" id="p-g0" placeholder="..."></div>
-          <div class="ni"><span class="nn">2.</span><input class="pi" id="p-g1" placeholder="..."></div>
-          <div class="ni"><span class="nn">3.</span><input class="pi" id="p-g2" placeholder="..."></div>
+          <div class="ni"><span class="nn">1.</span><input class="pi" id="p-g0" placeholder="..." spellcheck="true"></div>
+          <div class="ni"><span class="nn">2.</span><input class="pi" id="p-g1" placeholder="..." spellcheck="true"></div>
+          <div class="ni"><span class="nn">3.</span><input class="pi" id="p-g2" placeholder="..." spellcheck="true"></div>
         </div>
         <div class="ps">
           <div class="pst">What Would Make Today Great</div>
-          <div class="ni"><span class="nn">1.</span><input class="pi" id="p-wg0" placeholder="..."></div>
-          <div class="ni"><span class="nn">2.</span><input class="pi" id="p-wg1" placeholder="..."></div>
-          <div class="ni"><span class="nn">3.</span><input class="pi" id="p-wg2" placeholder="..."></div>
+          <div class="ni"><span class="nn">1.</span><input class="pi" id="p-wg0" placeholder="..." spellcheck="true"></div>
+          <div class="ni"><span class="nn">2.</span><input class="pi" id="p-wg1" placeholder="..." spellcheck="true"></div>
+          <div class="ni"><span class="nn">3.</span><input class="pi" id="p-wg2" placeholder="..." spellcheck="true"></div>
         </div>
         <div class="ps">
           <div class="pst">Current Projects</div>
           <div class="cp2">
             <div>
-              <div class="ni"><span class="nn">1.</span><input class="pi" id="p-cp0" placeholder="..."><button class="proj-link" data-cpidx="0">&#8594;</button></div>
-              <div class="ni"><span class="nn">2.</span><input class="pi" id="p-cp1" placeholder="..."><button class="proj-link" data-cpidx="1">&#8594;</button></div>
-              <div class="ni"><span class="nn">3.</span><input class="pi" id="p-cp2" placeholder="..."><button class="proj-link" data-cpidx="2">&#8594;</button></div>
-              <div class="ni"><span class="nn">4.</span><input class="pi" id="p-cp3" placeholder="..."><button class="proj-link" data-cpidx="3">&#8594;</button></div>
-              <div class="ni"><span class="nn">5.</span><input class="pi" id="p-cp4" placeholder="..."><button class="proj-link" data-cpidx="4">&#8594;</button></div>
+              <div class="ni"><span class="nn">1.</span><input class="pi" id="p-cp0" placeholder="..." spellcheck="true"><button class="proj-link" data-cpidx="0">&#8594;</button></div>
+              <div class="ni"><span class="nn">2.</span><input class="pi" id="p-cp1" placeholder="..." spellcheck="true"><button class="proj-link" data-cpidx="1">&#8594;</button></div>
+              <div class="ni"><span class="nn">3.</span><input class="pi" id="p-cp2" placeholder="..." spellcheck="true"><button class="proj-link" data-cpidx="2">&#8594;</button></div>
+              <div class="ni"><span class="nn">4.</span><input class="pi" id="p-cp3" placeholder="..." spellcheck="true"><button class="proj-link" data-cpidx="3">&#8594;</button></div>
+              <div class="ni"><span class="nn">5.</span><input class="pi" id="p-cp4" placeholder="..." spellcheck="true"><button class="proj-link" data-cpidx="4">&#8594;</button></div>
             </div>
             <div>
-              <div class="ni"><span class="nn">6.</span><input class="pi" id="p-cp5" placeholder="..."><button class="proj-link" data-cpidx="5">&#8594;</button></div>
-              <div class="ni"><span class="nn">7.</span><input class="pi" id="p-cp6" placeholder="..."><button class="proj-link" data-cpidx="6">&#8594;</button></div>
-              <div class="ni"><span class="nn">8.</span><input class="pi" id="p-cp7" placeholder="..."><button class="proj-link" data-cpidx="7">&#8594;</button></div>
-              <div class="ni"><span class="nn">9.</span><input class="pi" id="p-cp8" placeholder="..."><button class="proj-link" data-cpidx="8">&#8594;</button></div>
-              <div class="ni"><span class="nn">10.</span><input class="pi" id="p-cp9" placeholder="..."><button class="proj-link" data-cpidx="9">&#8594;</button></div>
+              <div class="ni"><span class="nn">6.</span><input class="pi" id="p-cp5" placeholder="..." spellcheck="true"><button class="proj-link" data-cpidx="5">&#8594;</button></div>
+              <div class="ni"><span class="nn">7.</span><input class="pi" id="p-cp6" placeholder="..." spellcheck="true"><button class="proj-link" data-cpidx="6">&#8594;</button></div>
+              <div class="ni"><span class="nn">8.</span><input class="pi" id="p-cp7" placeholder="..." spellcheck="true"><button class="proj-link" data-cpidx="7">&#8594;</button></div>
+              <div class="ni"><span class="nn">9.</span><input class="pi" id="p-cp8" placeholder="..." spellcheck="true"><button class="proj-link" data-cpidx="8">&#8594;</button></div>
+              <div class="ni"><span class="nn">10.</span><input class="pi" id="p-cp9" placeholder="..." spellcheck="true"><button class="proj-link" data-cpidx="9">&#8594;</button></div>
             </div>
           </div>
         </div>
@@ -318,15 +318,15 @@ footer{background:var(--black);height:30px;display:flex;align-items:center;justi
     <div class="eod">
       <div class="ecol">
         <div class="etitle">Today's Wins</div>
-        <div class="ni"><span class="nn">1.</span><input class="pi" id="p-w0" placeholder="..."></div>
-        <div class="ni"><span class="nn">2.</span><input class="pi" id="p-w1" placeholder="..."></div>
-        <div class="ni"><span class="nn">3.</span><input class="pi" id="p-w2" placeholder="..."></div>
+        <div class="ni"><span class="nn">1.</span><input class="pi" id="p-w0" placeholder="..." spellcheck="true"></div>
+        <div class="ni"><span class="nn">2.</span><input class="pi" id="p-w1" placeholder="..." spellcheck="true"></div>
+        <div class="ni"><span class="nn">3.</span><input class="pi" id="p-w2" placeholder="..." spellcheck="true"></div>
       </div>
       <div class="ecol" style="border-left:1px solid var(--gl)">
         <div class="etitle">How I'll Improve</div>
-        <div class="ni"><span class="nn">1.</span><input class="pi" id="p-i0" placeholder="..."></div>
-        <div class="ni"><span class="nn">2.</span><input class="pi" id="p-i1" placeholder="..."></div>
-        <div class="ni"><span class="nn">3.</span><input class="pi" id="p-i2" placeholder="..."></div>
+        <div class="ni"><span class="nn">1.</span><input class="pi" id="p-i0" placeholder="..." spellcheck="true"></div>
+        <div class="ni"><span class="nn">2.</span><input class="pi" id="p-i1" placeholder="..." spellcheck="true"></div>
+        <div class="ni"><span class="nn">3.</span><input class="pi" id="p-i2" placeholder="..." spellcheck="true"></div>
       </div>
     </div>
   </div>
@@ -841,8 +841,8 @@ function renderProjMain(){
   main.innerHTML='<div class="ch">'+esc(curProj)
     +'<span style="font-size:10px;font-weight:400;opacity:.7">'+tasks.length+' task'+(tasks.length!==1?'s':'')+'</span></div>'
     +'<div class="padd">'
-      +'<input id="pt-inp" placeholder="Add a task for this project..." style="flex:1">'
-      +'<input id="pt-note" placeholder="Notes..." style="width:160px">'
+      +'<input id="pt-inp" placeholder="Add a task for this project..." style="flex:1" spellcheck="true">'
+      +'<input id="pt-note" placeholder="Notes..." style="width:160px" spellcheck="true">'
       +'<button class="btn bp" id="pt-addbtn">+ Add</button>'
     +'</div><div id="pt-list"></div>';
   document.getElementById('pt-addbtn').addEventListener('click',addProjTask);
@@ -863,8 +863,8 @@ function renderProjTasks(){
       return '<tr class="pt-row" draggable="true" data-ptid="'+t.id+'">'
         +'<td><span class="drag-handle" title="Drag to reorder">&#8597;</span></td>'
         +'<td><span class="pt-seq">'+(idx+1)+'</span></td>'
-        +'<td><input class="ii" value="'+esc(t.item||'')+'" placeholder="Task..." data-ptid="'+t.id+'" data-field="item" onchange="updPT(this)"></td>'
-        +'<td><input class="ii" value="'+esc(t.notes||'')+'" placeholder="..." data-ptid="'+t.id+'" data-field="notes" onchange="updPT(this)"></td>'
+        +'<td><input class="ii" value="'+esc(t.item||'')+'" placeholder="Task..." data-ptid="'+t.id+'" data-field="item" spellcheck="true" onchange="updPT(this)"></td>'
+        +'<td><input class="ii" value="'+esc(t.notes||'')+'" placeholder="..." data-ptid="'+t.id+'" data-field="notes" spellcheck="true" onchange="updPT(this)"></td>'
         +'<td><input type="date" class="ii" style="font-size:10px;font-weight:300;width:100%" value="'+(t.dueDate||'')+'" data-ptid="'+t.id+'" onchange="updPTDate(this)"></td>'
         +'<td>'+(function(){
           if(!added) return '<span style="font-size:10px;color:var(--gray)">&mdash;</span>';
