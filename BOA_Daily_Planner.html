@@ -510,6 +510,7 @@ function init(){
 
   renderAll();
   loadPlanUI(tod());
+  checkDueDates();
 }
 
 // ── RENDER ALL ───────────────────────────────────────────────
@@ -854,15 +855,17 @@ function renderProjTasks(){
   if(!tasks.length){list.innerHTML='<div class="emsg">No tasks yet &mdash; add one above</div>';return;}
   list.innerHTML='<table><thead><tr>'
     +'<th style="width:24px"></th><th style="width:24px">#</th>'
-    +'<th>TASK</th><th style="width:150px">NOTES</th><th style="width:90px">STATUS</th><th style="width:115px"></th><th style="width:26px"></th>'
+    +'<th>TASK</th><th style="width:130px">NOTES</th><th style="width:96px">DUE DATE</th><th style="width:90px">STATUS</th><th style="width:115px"></th><th style="width:26px"></th>'
     +'</tr></thead><tbody id="pt-tbody">'
     +tasks.map(function(t,idx){
       var added=t.addedToPlanner;
+      var dueLbl=t.dueDate?'<span style="font-family:var(--m);font-size:9px;color:'+(t.dueDate<=tod()?'#CC0000':'#666666')+'">'+t.dueDate+'</span>':'';
       return '<tr class="pt-row" draggable="true" data-ptid="'+t.id+'">'
         +'<td><span class="drag-handle" title="Drag to reorder">&#8597;</span></td>'
         +'<td><span class="pt-seq">'+(idx+1)+'</span></td>'
         +'<td><input class="ii" value="'+esc(t.item||'')+'" placeholder="Task..." data-ptid="'+t.id+'" data-field="item" onchange="updPT(this)"></td>'
         +'<td><input class="ii" value="'+esc(t.notes||'')+'" placeholder="..." data-ptid="'+t.id+'" data-field="notes" onchange="updPT(this)"></td>'
+        +'<td><input type="date" class="ii" style="font-size:10px;font-weight:300;width:100%" value="'+(t.dueDate||'')+'" data-ptid="'+t.id+'" onchange="updPTDate(this)"></td>'
         +'<td>'+(function(){
           if(!added) return '<span style="font-size:10px;color:var(--gray)">&mdash;</span>';
           var plannerTask=ldT().filter(function(x){return x.ptId===t.id||(x.fromProject===curProj&&x.item===t.item);})[0];
@@ -1061,6 +1064,69 @@ function initDragDrop(){
     });
   });
 }
+
+// ── DUE DATE HANDLING ─────────────────────────────────────
+function updPTDate(el){
+  var ptId=el.dataset.ptid;
+  var newDate=el.value||null;
+  var pt=ldPT();
+  if(!pt[curProj])return;
+  var ptTask=pt[curProj].filter(function(t){return t.id===ptId;})[0];
+  if(!ptTask)return;
+
+  // If task was already in planner and user sets a future date → remove from planner
+  if(ptTask.addedToPlanner && newDate && newDate > tod()){
+    var allTasks=ldT().filter(function(t){
+      return !(t.ptId===ptId||(t.fromProject===curProj&&t.item===ptTask.item));
+    });
+    svT(allTasks);
+    ptTask.addedToPlanner=false;
+    ptTask.plannerTaskId=null;
+    renderAll();
+  }
+
+  ptTask.dueDate=newDate;
+  svPT(pt);
+  renderProjTasks();
+}
+
+function checkDueDates(){
+  var today=tod();
+  var pt=ldPT();
+  var allTasks=ldT();
+  var added=[];
+  var changed=false;
+
+  Object.keys(pt).forEach(function(projName){
+    (pt[projName]||[]).forEach(function(ptTask){
+      if(ptTask.dueDate && ptTask.dueDate<=today && !ptTask.addedToPlanner && ptTask.item){
+        var newTaskId=uid();
+        allTasks.push({
+          id:newTaskId,priority:'B',order:1,
+          item:ptTask.item,duration:1,
+          notes:ptTask.notes||'',
+          status:'open',created:today,
+          fromProject:projName,ptId:ptTask.id
+        });
+        ptTask.addedToPlanner=true;
+        ptTask.plannerTaskId=newTaskId;
+        ptTask.dueDate=null;  // clear date
+        added.push({proj:projName,item:ptTask.item});
+        changed=true;
+      }
+    });
+  });
+
+  if(changed){
+    svT(allTasks);svPT(pt);
+    renderAll();
+    setTimeout(function(){
+      var msg=added.length+' project task'+(added.length>1?'s':'')+' added to your planner today:\n\n'+added.map(function(a){return '- ['+a.proj+'] '+a.item;}).join('\n');
+      alert(msg);
+    },600);
+  }
+}
+
 window.addEventListener('DOMContentLoaded',init);
 </script>
 <footer>
