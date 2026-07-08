@@ -508,6 +508,7 @@ function init(){
     plans[tod()]=np;svP(plans);
   }
 
+  processUnhandledDays();
   renderAll();
   loadPlanUI(tod());
   checkDueDates();
@@ -1126,6 +1127,85 @@ function checkDueDates(){
     },600);
   }
 }
+
+
+// ── END OF DAY TRANSITION ─────────────────────────────────
+var lastKnownDate = tod();
+
+function runDayTransition(dateToClose){
+  // 1. Save that day's planner snapshot (already saved via qSave, just ensure it exists)
+  var plans = ldP();
+  if(!plans[dateToClose]) plans[dateToClose] = blankPlan(dateToClose);
+
+  // 2. Remove completed tasks from the task list
+  var tasks = ldT();
+  var remaining = tasks.filter(function(t){ return t.status !== 'completed'; });
+  svT(remaining);
+
+  // 3. Clear today's planner fields EXCEPT current projects and meetings
+  // (Don't clear the archived day — create fresh plan for today)
+  var today = tod();
+  if(!plans[today]){
+    var np = blankPlan(today);
+    // Carry forward current projects from the closed day
+    var prev = plans[dateToClose];
+    if(prev && prev.currentProjects) np.currentProjects = prev.currentProjects.slice();
+    plans[today] = np;
+  }
+  svP(plans);
+}
+
+function processUnhandledDays(){
+  var today = tod();
+  var plans = ldP();
+
+  // Find all past days that haven't been transitioned
+  // A day needs transition if it exists in plans and is before today
+  var pastDays = Object.keys(plans).filter(function(d){ return d < today; }).sort();
+
+  // Also check if there are completed tasks that should have been removed
+  var tasks = ldT();
+  var hasStaleDone = tasks.some(function(t){
+    return t.status === 'completed' && t.completedDate && t.completedDate < today;
+  });
+
+  if(pastDays.length > 0 || hasStaleDone){
+    // Archive each past day (they're already saved, just clean up tasks)
+    var remaining = tasks.filter(function(t){
+      return t.status !== 'completed' || t.completedDate === today;
+    });
+    svT(remaining);
+
+    // Ensure today's plan exists with projects carried forward
+    if(!plans[today]){
+      var np = blankPlan(today);
+      // Find most recent past day for project carry-forward
+      if(pastDays.length){
+        var lastDay = plans[pastDays[pastDays.length-1]];
+        if(lastDay && lastDay.currentProjects) np.currentProjects = lastDay.currentProjects.slice();
+      }
+      plans[today] = np;
+      svP(plans);
+    }
+  }
+}
+
+function midnightCheck(){
+  var currentDate = tod();
+  if(currentDate !== lastKnownDate){
+    // Date has changed — run transition for the old day
+    runDayTransition(lastKnownDate);
+    lastKnownDate = currentDate;
+    // Reload the UI fresh
+    renderAll();
+    loadPlanUI(currentDate);
+    document.getElementById('hdrdate').textContent = fmtShort(currentDate);
+    document.getElementById('pdate').textContent = fmtLong(currentDate);
+  }
+}
+
+// Check every 60 seconds for midnight rollover
+setInterval(midnightCheck, 60000);
 
 window.addEventListener('DOMContentLoaded',init);
 </script>
