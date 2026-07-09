@@ -959,21 +959,43 @@ function importData(){
 
 // ── HISTORY ──────────────────────────────────────────────────
 function showView(name){
-  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');});
-  document.getElementById('v'+name).classList.add('on');
-  ['today','projects','history'].forEach(function(n){
-    document.getElementById('btn-'+n).classList.toggle('act',n===name);
+  // Hide all views
+  var views=['vtoday','vprojects','vhist'];
+  views.forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.classList.remove('on');
+  });
+  // Show target view
+  var target=document.getElementById('v'+name);
+  if(target) target.classList.add('on');
+  // Update nav buttons
+  var btns=['today','projects','history'];
+  btns.forEach(function(n){
+    var btn=document.getElementById('btn-'+n);
+    if(btn){
+      btn.classList.remove('act');
+      if(n===name) btn.classList.add('act');
+    }
   });
   if(name==='history'){
     renderHist();
-    setTimeout(function(){var first=document.querySelector('.hday');if(first){first.classList.add('act');viewDay(first.dataset.date);}},50);
+    setTimeout(function(){
+      var first=document.querySelector('.hday');
+      if(first){first.classList.add('act');viewDay(first.dataset.date);}
+    },80);
   }
   if(name==='projects') renderProjects();
 }
 function renderHist(){
-  var plans=ldP();var dates=Object.keys(plans).sort(function(a,b){return b.localeCompare(a);});
+  var plans=ldP();var today=tod();
+  // Only show PAST days in history — today is the live planner
+  var dates=Object.keys(plans).filter(function(d){return d<today;}).sort(function(a,b){return b.localeCompare(a);});
   var sb=document.getElementById('hsbar');
-  if(!dates.length){sb.innerHTML='<div style="padding:20px;text-align:center;color:var(--gray);font-size:12px">No history yet — your days will appear here as you use the planner.</div>';return;}
+  if(!dates.length){
+    sb.innerHTML='<div style="padding:24px 20px;text-align:center;color:#AAAAAA;font-size:11px;font-weight:300;letter-spacing:1px;line-height:1.8">No history yet.<br>Past days will appear here<br>starting tomorrow.</div>';
+    document.getElementById('hcont').innerHTML='<div class="hempty">Past planners will appear here each day</div>';
+    return;
+  }
   var tasks=ldT();
   sb.innerHTML=dates.map(function(d){
     var p=plans[d];var done=tasks.filter(function(t){return t.completedDate===d;}).length;var isToday=d===tod();
