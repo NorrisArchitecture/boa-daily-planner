@@ -214,6 +214,10 @@ footer{background:var(--black);height:30px;display:flex;align-items:center;justi
 .foot-center{font-family:var(--m);font-size:7px;color:#777777;letter-spacing:2px}
 .foot-right{font-family:var(--m);font-size:6.5px;color:#666666;letter-spacing:1px}
 
+.acc-btn{background:transparent;border:none;cursor:pointer;font-size:12px;color:#DDDDDD;padding:0 4px;flex-shrink:0;line-height:1;transition:color .2s;border-radius:50%}
+.acc-btn:hover{color:#7C3AED}
+.acc-btn.done{color:#7C3AED}
+.acc-done{color:#7C3AED !important;font-weight:500}
 ::-webkit-scrollbar{width:3px;height:3px}
 ::-webkit-scrollbar-thumb{background:#E8E8E8}
 </style>
@@ -279,9 +283,9 @@ footer{background:var(--black);height:30px;display:flex;align-items:center;justi
         </div>
         <div class="ps">
           <div class="pst">What Would Make Today Great</div>
-          <div class="ni"><span class="nn">1.</span><input class="pi" id="p-wg0" placeholder="..." spellcheck="true"></div>
-          <div class="ni"><span class="nn">2.</span><input class="pi" id="p-wg1" placeholder="..." spellcheck="true"></div>
-          <div class="ni"><span class="nn">3.</span><input class="pi" id="p-wg2" placeholder="..." spellcheck="true"></div>
+          <div class="ni"><span class="nn">1.</span><input class="pi" id="p-wg0" placeholder="..." spellcheck="true"><button class="acc-btn" id="acc-0" onclick="toggleAcc(0)" title="Mark accomplished">&#9679;</button></div>
+          <div class="ni"><span class="nn">2.</span><input class="pi" id="p-wg1" placeholder="..." spellcheck="true"><button class="acc-btn" id="acc-1" onclick="toggleAcc(1)" title="Mark accomplished">&#9679;</button></div>
+          <div class="ni"><span class="nn">3.</span><input class="pi" id="p-wg2" placeholder="..." spellcheck="true"><button class="acc-btn" id="acc-2" onclick="toggleAcc(2)" title="Mark accomplished">&#9679;</button></div>
         </div>
         <div class="ps">
           <div class="pst">Current Projects</div>
@@ -405,7 +409,7 @@ function sortT(arr){
 function blankPlan(d){
   var kpis={};KPIS.forEach(function(k){kpis[k]='';});
   return{date:d,role:'',purpose:'',mainGoals:'',
-    grateful:['','',''],makeGreat:['','',''],
+    grateful:['','',''],makeGreat:['','',''],makeGreatDone:[false,false,false],
     currentProjects:['','','','','','','','','',''],
     kpis:kpis,wins:['','',''],improvements:['','',''],meetings:[]};
 }
@@ -787,6 +791,8 @@ function doSave(){
   for(var i=0;i<3;i++){
     p.grateful[i]=document.getElementById('p-g'+i).value;
     p.makeGreat[i]=document.getElementById('p-wg'+i).value;
+    if(!p.makeGreatDone)p.makeGreatDone=[false,false,false];
+    // makeGreatDone saved via toggleAcc directly
     p.wins[i]=document.getElementById('p-w'+i).value;
     p.improvements[i]=document.getElementById('p-i'+i).value;
   }
@@ -803,6 +809,14 @@ function loadPlanUI(date){
   for(var i=0;i<3;i++){
     document.getElementById('p-g'+i).value=(p.grateful||[])[i]||'';
     document.getElementById('p-wg'+i).value=(p.makeGreat||[])[i]||'';
+    var accBtn=document.getElementById('acc-'+i);
+    var isDone=(p.makeGreatDone||[])[i]||false;
+    if(accBtn){
+      if(isDone){accBtn.classList.add('done');}
+      else{accBtn.classList.remove('done');}
+    }
+    var inp=document.getElementById('p-wg'+i);
+    if(inp){inp.style.color=isDone?'#7C3AED':'';inp.style.fontWeight=isDone?'500':'';}
     document.getElementById('p-w'+i).value=(p.wins||[])[i]||'';
     document.getElementById('p-i'+i).value=(p.improvements||[])[i]||'';
   }
@@ -1029,7 +1043,18 @@ function viewDay(date){
     +'<div class="hpm">'+(p.role?'Role: '+esc(p.role)+'  ':'')+(p.mainGoals?esc(p.mainGoals):'')+'</div></div>'
     +'<div class="hgrid"><div class="hcol">'
     +roSec("I'm Grateful For",(p.grateful||[]).filter(Boolean))
-    +roSec('What Would Make Today Great',(p.makeGreat||[]).filter(Boolean))
+    +(function(){
+    var items=(p.makeGreat||[]);
+    var done=(p.makeGreatDone||[]);
+    var out=[];
+    items.forEach(function(item,i){if(item){out.push({text:item,done:!!done[i]});}});
+    if(!out.length)return '';
+    return '<div class="rosec"><div class="rot">What Would Make Today Great</div>'
+      +out.map(function(o,i){return '<div class="roi"><span class="ron">'+(i+1)+'.</span>'
+        +'<span style="'+(o.done?'color:#7C3AED;font-weight:500':'')+'">'
+        +esc(o.text)+(o.done?' &#10003;':'')+'</span></div>';}).join('')
+      +'</div>';
+  })()
     +roSec("Today's Priorities",openTop.map(function(t){return '['+t.priority+'] '+t.item+(t.duration?' ('+fmtDur(t.duration)+')':'');}))
     +roSec('Current Projects',(p.currentProjects||[]).filter(Boolean))
     +'</div><div class="hcol">'
@@ -1228,6 +1253,23 @@ function midnightCheck(){
 
 // Check every 60 seconds for midnight rollover
 setInterval(midnightCheck, 60000);
+
+
+// ── ACCOMPLISHED TOGGLE ───────────────────────────────────
+function toggleAcc(idx){
+  var today=tod();
+  var plans=ldP();
+  var p=plans[today]||blankPlan(today);
+  if(!p.makeGreatDone) p.makeGreatDone=[false,false,false];
+  p.makeGreatDone[idx]=!p.makeGreatDone[idx];
+  var isDone=p.makeGreatDone[idx];
+  plans[today]=p;svP(plans);
+  // Update button
+  var btn=document.getElementById('acc-'+idx);
+  var inp=document.getElementById('p-wg'+idx);
+  if(btn){if(isDone)btn.classList.add('done');else btn.classList.remove('done');}
+  if(inp){inp.style.color=isDone?'#7C3AED':'';inp.style.fontWeight=isDone?'500':'';}
+}
 
 window.addEventListener('DOMContentLoaded',init);
 </script>
