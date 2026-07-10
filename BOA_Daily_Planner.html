@@ -349,7 +349,7 @@ footer{background:var(--black);height:30px;display:flex;align-items:center;justi
 </div>
 
 <!-- HISTORY -->
-<div id="vhist" class="view">
+<div id="vhistory" class="view">
   <div style="display:flex;align-items:center;gap:12px">
     <h2 style="font-size:15px;font-weight:600">History</h2>
     <span style="font-size:11px;color:var(--gray)">Click any day to review</span>
@@ -975,7 +975,7 @@ function importData(){
 // ── HISTORY ──────────────────────────────────────────────────
 function showView(name){
   // Hide all views
-  var views=['vtoday','vprojects','vhist'];
+  var views=['vtoday','vprojects','vhistory'];
   views.forEach(function(id){
     var el=document.getElementById(id);
     if(el) el.classList.remove('on');
