@@ -515,6 +515,7 @@ function init(){
   processUnhandledDays();
   renderAll();
   loadPlanUI(tod());
+  doSave();  // Ensure today's plan is in localStorage immediately
   checkDueDates();
 }
 
@@ -1006,7 +1007,10 @@ function renderHist(){
   var dates=Object.keys(plans).filter(function(d){return d<today;}).sort(function(a,b){return b.localeCompare(a);});
   var sb=document.getElementById('hsbar');
   if(!dates.length){
-    sb.innerHTML='<div style="padding:24px 20px;text-align:center;color:#AAAAAA;font-size:11px;font-weight:300;letter-spacing:1px;line-height:1.8">No history yet.<br>Past days will appear here<br>starting tomorrow.</div>';
+    var allDates=Object.keys(plans);
+    var diagMsg='No past days found in storage.';
+    if(allDates.length){diagMsg='Storage has '+allDates.length+' day(s): '+allDates.join(', ')+'<br>Today is '+today+'<br>All dates must be before today to appear here.';}
+    sb.innerHTML='<div style="padding:20px;text-align:center;color:#AAAAAA;font-size:10px;font-weight:300;line-height:1.8">No history yet.<br>Past days appear here each morning.<br><br><span style="font-size:9px;color:#CCCCCC">'+diagMsg+'</span></div>';
     document.getElementById('hcont').innerHTML='<div class="hempty">Past planners will appear here each day</div>';
     return;
   }
@@ -1270,6 +1274,14 @@ function toggleAcc(idx){
   if(btn){if(isDone)btn.classList.add('done');else btn.classList.remove('done');}
   if(inp){inp.style.color=isDone?'#7C3AED':'';inp.style.fontWeight=isDone?'500':'';}
 }
+
+
+// ── AGGRESSIVE SAVE ───────────────────────────────────────
+// Save immediately when tab goes to background or browser closes
+window.addEventListener('beforeunload', function(){ doSave(); });
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState==='hidden') doSave();
+});
 
 window.addEventListener('DOMContentLoaded',init);
 </script>
