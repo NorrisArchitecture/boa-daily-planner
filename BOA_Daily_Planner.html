@@ -679,16 +679,37 @@ function updTask(id,field,val){
 function toggleSt(id){
   var tasks=ldT();var t=tasks.filter(function(x){return x.id===id;})[0];
   if(!t)return;
+  var today=tod();
   if(t.status==='open'){
-    var plans=ldP();var today=tod();
+    // Lock schedule position
+    var plans=ldP();
     var meetings=(plans[today]||{}).meetings||[];
     var result=buildSched(tasks,meetings);
     var locked=[];
     result.slots.forEach(function(s){if(s.content&&s.content.type==='task'&&s.content.id===id)locked.push(s.hour);});
     t.lockedHours=locked;t.lockedDate=today;
-  } else {t.lockedHours=null;t.lockedDate=null;}
+    // Save task snapshot into today's planner so History persists it
+    var plans2=ldP();
+    if(!plans2[today])plans2[today]=blankPlan(today);
+    if(!plans2[today].completedTasks)plans2[today].completedTasks=[];
+    // Avoid duplicates
+    var already=plans2[today].completedTasks.filter(function(c){return c.id===id;}).length;
+    if(!already) plans2[today].completedTasks.push({
+      id:t.id,item:t.item,priority:t.priority,
+      fromProject:t.fromProject||null,notes:t.notes||''
+    });
+    svP(plans2);
+  } else {
+    t.lockedHours=null;t.lockedDate=null;
+    // Remove from planner snapshot if reopened
+    var plans3=ldP();
+    if(plans3[today]&&plans3[today].completedTasks){
+      plans3[today].completedTasks=plans3[today].completedTasks.filter(function(c){return c.id!==id;});
+      svP(plans3);
+    }
+  }
   t.status=t.status==='open'?'completed':'open';
-  t.completedDate=t.status==='completed'?tod():null;
+  t.completedDate=t.status==='completed'?today:null;
   svT(tasks);renderAll();qSave();
 }
 function delTask(id){
@@ -1054,7 +1075,15 @@ function viewDay(date){
   if(!p){hc.innerHTML='<div class="hempty">No data for this day</div>';return;}
 
   // Only tasks completed on this specific day
-  var doneTasks=sortT(tasks.filter(function(t){return t.completedDate===date;}));
+  // Use completedTasks saved in planner snapshot (persists after day transition)
+  var snapshotDone=(p.completedTasks||[]);
+  // Also check live task list as fallback (for today's completed tasks)
+  var liveDone=tasks.filter(function(t){return t.completedDate===date;});
+  // Merge — snapshot takes priority, add any live ones not already in snapshot
+  var doneMap={};
+  snapshotDone.forEach(function(t){doneMap[t.id]=t;});
+  liveDone.forEach(function(t){if(!doneMap[t.id])doneMap[t.id]={id:t.id,item:t.item,priority:t.priority,fromProject:t.fromProject||null};});
+  var doneTasks=Object.values(doneMap).sort(function(a,b){return (PO[a.priority]||9)-(PO[b.priority]||9);});
   // Meetings from that day's planner
   var meetings=(p.meetings||[]);
 
