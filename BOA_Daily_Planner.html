@@ -1052,41 +1052,54 @@ function viewDay(date){
   var plans=ldP();var p=plans[date];var tasks=ldT();
   var hc=document.getElementById('hcont');
   if(!p){hc.innerHTML='<div class="hempty">No data for this day</div>';return;}
-  var meetings=p.meetings||[];var result=buildSched(tasks,meetings);
-  var schedItems=[];
-  result.slots.forEach(function(s){
-    var c=s.content;if(!c||!c.isFirst)return;
-    if(c.type==='meeting')schedItems.push({time:fmtHr(s.hour),text:'[Meeting] '+c.name});
-    else if(c.type==='task')schedItems.push({time:fmtHr(s.hour),text:'['+c.task.priority+'] '+c.task.item});
-  });
-  var doneTasks=tasks.filter(function(t){return t.completedDate===date;});
-  var openTop=sortT(tasks.filter(function(t){return t.status==='open'&&t.created<=date;})).slice(0,5);
+
+  // Only tasks completed on this specific day
+  var doneTasks=sortT(tasks.filter(function(t){return t.completedDate===date;}));
+  // Meetings from that day's planner
+  var meetings=(p.meetings||[]);
+
   hc.innerHTML='<div class="hphdr"><div class="hpd">'+fmtLong(date)+'</div>'
-    +'<div class="hpm">'+(p.role?'Role: '+esc(p.role)+'  ':'')+(p.mainGoals?esc(p.mainGoals):'')+'</div></div>'
+    +'<div class="hpm">'+(p.role?'Role: '+esc(p.role):'')+'</div></div>'
     +'<div class="hgrid"><div class="hcol">'
+
+    // LEFT: planner reflection fields
+    +roSec('Purpose',p.purpose?[p.purpose]:[])
     +roSec("I'm Grateful For",(p.grateful||[]).filter(Boolean))
     +(function(){
-    var items=(p.makeGreat||[]);
-    var done=(p.makeGreatDone||[]);
-    var out=[];
-    items.forEach(function(item,i){if(item){out.push({text:item,done:!!done[i]});}});
-    if(!out.length)return '';
-    return '<div class="rosec"><div class="rot">What Would Make Today Great</div>'
-      +out.map(function(o,i){return '<div class="roi"><span class="ron">'+(i+1)+'.</span>'
-        +'<span style="'+(o.done?'color:#7C3AED;font-weight:500':'')+'">'
-        +esc(o.text)+(o.done?' &#10003;':'')+'</span></div>';}).join('')
-      +'</div>';
-  })()
-    +roSec("Today's Priorities",openTop.map(function(t){return '['+t.priority+'] '+t.item+(t.duration?' ('+fmtDur(t.duration)+')':'');}))
+        var items=(p.makeGreat||[]);
+        var done=(p.makeGreatDone||[]);
+        var out=[];
+        items.forEach(function(item,i){if(item){out.push({text:item,done:!!done[i]});}});
+        if(!out.length)return '';
+        return '<div class="rosec"><div class="rot">What Would Make Today Great</div>'
+          +out.map(function(o,i){return '<div class="roi"><span class="ron">'+(i+1)+'.</span>'
+            +'<span style="'+(o.done?'color:#7C3AED;font-weight:500':'')+'">'
+            +esc(o.text)+(o.done?' &#10003;':'')+'</span></div>';}).join('')
+          +'</div>';
+      })()
+    +roSec('Main Goals',p.mainGoals?[p.mainGoals]:[])
     +roSec('Current Projects',(p.currentProjects||[]).filter(Boolean))
+    +roSec('KPIs &amp; Metrics',Object.keys(p.kpis||{}).filter(function(k){return p.kpis[k];}).map(function(k){return k+': '+p.kpis[k];}))
+
     +'</div><div class="hcol">'
-    +roSched(schedItems)
-    +roSec('KPIs & Metrics',Object.keys(p.kpis||{}).filter(function(k){return p.kpis[k];}).map(function(k){return k+': '+p.kpis[k];}))
+
+    // RIGHT: schedule (meetings only), completed tasks, EOD
+    +(meetings.length?'<div class="rosec"><div class="rot">Meetings</div>'
+      +meetings.map(function(m,i){return '<div class="roi"><span class="ron">'+fmtHr(m.startHour)+'</span>'+esc(m.name)+' ('+fmtDur(m.duration)+')</div>';}).join('')
+      +'</div>':'')
+    +(doneTasks.length?'<div class="rosec"><div class="rot">Completed That Day</div>'
+      +doneTasks.map(function(t,i){return '<div class="roi">'
+        +'<span class="ron">'+t.priority+'</span>'
+        +'<span>'+esc(t.item||'')+(t.fromProject?'<span style="font-size:9px;color:#AAAAAA"> &mdash; '+esc(t.fromProject)+'</span>':'')+'</span>'
+        +'</div>';}).join('')
+      +'</div>':'<div class="rosec"><div class="rot">Completed That Day</div><div style="font-size:11px;font-weight:300;color:#CCCCCC;padding:4px 0">Nothing completed</div></div>')
     +roSec("Today's Wins",(p.wins||[]).filter(Boolean))
     +roSec("How I'll Improve",(p.improvements||[]).filter(Boolean))
-    +(doneTasks.length?roSec('Completed',doneTasks.map(function(t){return '['+t.priority+'] '+t.item;})):'')
+
     +'</div></div>';
 }
+
+
 function roSec(title,items){
   if(!items.length)return '';
   return '<div class="rosec"><div class="rot">'+title+'</div>'
