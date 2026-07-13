@@ -218,6 +218,11 @@ footer{background:var(--black);height:30px;display:flex;align-items:center;justi
 .acc-btn:hover{color:#7C3AED}
 .acc-btn.done{color:#7C3AED}
 .acc-done{color:#7C3AED !important;font-weight:500}
+.sched-drag-handle{cursor:grab;color:#CCCCCC;font-size:14px;padding:0 3px;line-height:1;user-select:none}
+.sched-drag-handle:active{cursor:grabbing}
+.tb.drag-over-slot{outline:2px solid var(--black);outline-offset:-2px}
+.tb[draggable="true"]{cursor:grab}
+.tb[draggable="true"]:active{cursor:grabbing;opacity:.7}
 ::-webkit-scrollbar{width:3px;height:3px}
 ::-webkit-scrollbar-thumb{background:#E8E8E8}
 </style>
@@ -313,6 +318,7 @@ footer{background:var(--black);height:30px;display:flex;align-items:center;justi
           <div style="display:flex;gap:5px">
             <button class="bmtg" id="addmtgbtn">+ Add Meeting</button>
             <button class="bmtg" id="syncbtn" style="background:#EFF6FF;border-color:#BFDBFE;color:#2563EB">&#8635; Sync Outlook</button>
+            <button class="bmtg" onclick="resetSchedOrder()" title="Reset to priority order" style="color:#999">&#8635; Reset</button>
           </div>
         </div>
         <div id="sbody"></div>
@@ -409,7 +415,7 @@ function sortT(arr){
 function blankPlan(d){
   var kpis={};KPIS.forEach(function(k){kpis[k]='';});
   return{date:d,role:'',purpose:'',mainGoals:'',
-    grateful:['','',''],makeGreat:['','',''],makeGreatDone:[false,false,false],
+    grateful:['','',''],makeGreat:['','',''],makeGreatDone:[false,false,false],scheduleOrder:[],
     currentProjects:['','','','','','','','','',''],
     kpis:kpis,wins:['','',''],improvements:['','',''],meetings:[]};
 }
@@ -444,8 +450,19 @@ function buildSched(tasks,meetings){
     });
   });
 
-  // Place open tasks
-  var open=sortT(tasks.filter(function(t){return t.status==='open';}));
+  // Place open tasks — use manual scheduleOrder if set, else priority sort
+  var schedOrder=getSchedOrder();
+  var openAll=tasks.filter(function(t){return t.status==='open';});
+  var open;
+  if(schedOrder.length){
+    var taskMap={};openAll.forEach(function(t){taskMap[t.id]=t;});
+    var ordered=schedOrder.map(function(id){return taskMap[id];}).filter(Boolean);
+    var inOrder={};schedOrder.forEach(function(id){inOrder[id]=true;});
+    var unordered=sortT(openAll.filter(function(t){return !inOrder[t.id];}));
+    open=ordered.concat(unordered);
+  } else {
+    open=sortT(openAll);
+  }
   var overflow=[];
   open.forEach(function(task){
     var durHrs=parseFloat(task.duration)||1;
@@ -602,7 +619,9 @@ function renderSched(){
       var pLbl=pHrs===0.5?'30m':pHrs+'hr',nLbl=nHrs===0.5?'30m':nHrs+'hr';
       var hrsHtml=c.isFirst?'<span class="tbhrs" style="'+(isDone?'opacity:.4':'')+'">'+pLbl+(c.needed>c.placed?' of '+nLbl:'')+'</span>':'';
       var chk=isDone&&c.isFirst?'<span style="color:#059669;font-size:11px;margin-right:2px">&#10003;</span>':'';
-      contHtml='<div class="tb tb'+t.priority+'" style="'+sty+'">'
+      var dragHandle=(!isDone&&c.isFirst)?'<span class="sched-drag-handle" draggable="false" title="Drag to reorder">&#8942;</span>':'';
+      contHtml='<div class="tb tb'+t.priority+'" style="'+sty+';cursor:'+(c.isFirst&&!isDone?'grab':'default')+'" draggable="'+(c.isFirst&&!isDone?'true':'false')+'" data-drag-task="'+t.id+'">'
+        +dragHandle
         +'<span class="pb p'+t.priority+'">'+t.priority+'</span>'+chk
         +'<span class="tbname">'+nameHtml+'</span>'+hrsHtml+'</div>';
       if(c.isFirst){
@@ -637,6 +656,51 @@ function renderSched(){
   body.querySelectorAll('button[data-mtgid]').forEach(function(el){el.addEventListener('click',function(){delMtg(this.dataset.mtgid);});});
   body.querySelectorAll('[data-action="toggle"]').forEach(function(el){el.addEventListener('click',function(){toggleSt(this.dataset.id);});});
 
+  // Schedule drag-to-reorder
+  var dragTaskId=null;
+  body.querySelectorAll('.tb[draggable="true"]').forEach(function(el){
+    el.addEventListener('dragstart',function(e){
+      dragTaskId=this.dataset.dragTask;
+      e.dataTransfer.effectAllowed='move';
+      this.style.opacity='0.5';
+    });
+    el.addEventListener('dragend',function(){
+      this.style.opacity='';
+      body.querySelectorAll('.tb').forEach(function(b){b.classList.remove('drag-over-slot');});
+    });
+    el.addEventListener('dragover',function(e){
+      e.preventDefault();
+      body.querySelectorAll('.tb').forEach(function(b){b.classList.remove('drag-over-slot');});
+      if(this.dataset.dragTask&&this.dataset.dragTask!==dragTaskId) this.classList.add('drag-over-slot');
+    });
+    el.addEventListener('drop',function(e){
+      e.preventDefault();
+      var targetId=this.dataset.dragTask;
+      if(!dragTaskId||!targetId||dragTaskId===targetId)return;
+      var order=getSchedOrder();
+      var tasks=ldT();
+      // Build order from current schedule if empty
+      if(!order.length){
+        var openIds=sortT(tasks.filter(function(t){return t.status==='open';})).map(function(t){return t.id;});
+        order=openIds;
+      }
+      // Move dragTaskId to position of targetId
+      order=order.filter(function(id){return id!==dragTaskId;});
+      var tgtIdx=order.indexOf(targetId);
+      if(tgtIdx===-1){
+        // targetId not in order yet — add both
+        var allOpen=sortT(tasks.filter(function(t){return t.status==='open';})).map(function(t){return t.id;});
+        order=allOpen.slice();
+        order=order.filter(function(id){return id!==dragTaskId;});
+        tgtIdx=order.indexOf(targetId);
+      }
+      order.splice(tgtIdx,0,dragTaskId);
+      saveSchedOrder(order);
+      dragTaskId=null;
+      renderSched();
+    });
+  });
+
   var op=document.getElementById('ovfpanel'),ol=document.getElementById('ovflist');
   if(overflow.length){
     op.style.display='block';
@@ -666,7 +730,7 @@ function renderPri(){
 function addTask(){
   var tasks=ldT();
   var t={id:uid(),priority:'B',order:1,item:'',duration:1,notes:'',status:'open',created:tod()};
-  tasks.push(t);svT(tasks);renderAll();
+  tasks.push(t);svT(tasks);appendToSchedOrder(t.id);renderAll();
   setTimeout(function(){
     var row=document.getElementById('tr-'+t.id);
     if(row){var inp=row.querySelector('input[data-field="item"]');if(inp)inp.focus();}
@@ -1239,6 +1303,34 @@ function checkDueDates(){
   }
 }
 
+
+
+// ── SCHEDULE ORDER ────────────────────────────────────────
+function getSchedOrder(){
+  var today=tod();var plans=ldP();var p=plans[today]||{};
+  return (p.scheduleOrder||[]).slice();
+}
+function saveSchedOrder(order){
+  var today=tod();var plans=ldP();
+  if(!plans[today])plans[today]=blankPlan(today);
+  plans[today].scheduleOrder=order;
+  svP(plans);
+}
+function resetSchedOrder(){
+  saveSchedOrder([]);
+  renderSched();
+}
+// When a task is added, append its ID to scheduleOrder
+function appendToSchedOrder(taskId){
+  var order=getSchedOrder();
+  if(order.indexOf(taskId)===-1) order.push(taskId);
+  saveSchedOrder(order);
+}
+// When a task is completed or deleted, remove from scheduleOrder
+function removeFromSchedOrder(taskId){
+  var order=getSchedOrder().filter(function(id){return id!==taskId;});
+  saveSchedOrder(order);
+}
 
 // ── END OF DAY TRANSITION ─────────────────────────────────
 var lastKnownDate = tod();
