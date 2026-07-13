@@ -741,9 +741,27 @@ function parseOutlookDate(val){
   var year=parseInt(val.slice(0,4)),month=parseInt(val.slice(4,6))-1,day=parseInt(val.slice(6,8));
   var hour=parseInt(val.slice(9,11)),min=parseInt(val.slice(11,13));
   var d=isUTC?new Date(Date.UTC(year,month,day,hour,min,0)):new Date(year,month,day,hour,min,0);
-  var localDate=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
-  var localHour=d.getHours()+(d.getMinutes()>=30?0.5:0);
-  return{date:localDate,hour:localHour};
+
+  // Use Intl API for reliable DST-aware local time conversion
+  try {
+    var tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
+    var fmt=new Intl.DateTimeFormat('en-CA',{
+      timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit',
+      hour:'2-digit',minute:'2-digit',hour12:false
+    });
+    var parts={};
+    fmt.formatToParts(d).forEach(function(p){parts[p.type]=p.value;});
+    var h=parseInt(parts.hour);if(h===24)h=0;
+    var m=parseInt(parts.minute);
+    var localDate=parts.year+'-'+parts.month+'-'+parts.day;
+    var localHour=h+(m>=30?0.5:0);
+    return{date:localDate,hour:localHour};
+  } catch(e) {
+    // Fallback to getHours if Intl fails
+    var localDate=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+    var localHour=d.getHours()+(d.getMinutes()>=30?0.5:0);
+    return{date:localDate,hour:localHour};
+  }
 }
 function parseICS(text){
   var events=[],lines=text.split(/\r?\n/),current=null;
