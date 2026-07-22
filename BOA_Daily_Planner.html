@@ -974,39 +974,57 @@ function renderProjTasks(){
   if(!tasks.length){list.innerHTML='<div class="emsg">No tasks yet &mdash; add one above</div>';return;}
   list.innerHTML='<table><thead><tr>'
     +'<th style="width:24px"></th><th style="width:24px">#</th>'
-    +'<th>TASK</th><th style="width:130px">NOTES</th><th style="width:96px">DUE DATE</th><th style="width:90px">STATUS</th><th style="width:115px"></th><th style="width:26px"></th>'
+    +'<th>TASK</th><th style="width:120px">NOTES</th><th style="width:90px">DUE DATE</th><th style="width:80px">COMPLETE</th><th style="width:80px">PLANNER</th><th style="width:115px"></th><th style="width:26px"></th>'
     +'</tr></thead><tbody id="pt-tbody">'
     +tasks.map(function(t,idx){
       var added=t.addedToPlanner;
       var dueLbl=t.dueDate?'<span style="font-family:var(--m);font-size:9px;color:'+(t.dueDate<=tod()?'#CC0000':'#666666')+'">'+t.dueDate+'</span>':'';
-      return '<tr class="pt-row" draggable="true" data-ptid="'+t.id+'">'
+      var isDone=t.status==='completed';
+      var rowSty=isDone?'background:#FAFAFA;opacity:.7':'';
+      var txtSty=isDone?'text-decoration:line-through;color:#AAAAAA':'';
+      return '<tr class="pt-row" draggable="true" data-ptid="'+t.id+'" style="'+rowSty+'">'
         +'<td><span class="drag-handle" title="Drag to reorder">&#8597;</span></td>'
         +'<td><span class="pt-seq">'+(idx+1)+'</span></td>'
-        +'<td><input class="ii" value="'+esc(t.item||'')+'" placeholder="Task..." data-ptid="'+t.id+'" data-field="item" spellcheck="true" onchange="updPT(this)"></td>'
+        +'<td><input class="ii" style="'+txtSty+'" value="'+esc(t.item||'')+'" placeholder="Task..." data-ptid="'+t.id+'" data-field="item" spellcheck="true" '+(isDone?'disabled':'')+' onchange="updPT(this)"></td>'
         +'<td><input class="ii" value="'+esc(t.notes||'')+'" placeholder="..." data-ptid="'+t.id+'" data-field="notes" spellcheck="true" onchange="updPT(this)"></td>'
         +'<td><input type="date" class="ii" style="font-size:10px;font-weight:300;width:100%" value="'+(t.dueDate||'')+'" data-ptid="'+t.id+'" onchange="updPTDate(this)"></td>'
-        +'<td>'+(function(){
-          if(!added) return '<span style="font-size:10px;color:var(--gray)">&mdash;</span>';
-          var plannerTask=ldT().filter(function(x){return x.ptId===t.id||(x.fromProject===curProj&&x.item===t.item);})[0];
-          if(plannerTask&&plannerTask.status==='completed') return '<span style="font-size:10px;color:#059669">&#10003; Completed</span>';
-          return '<span class="in-planner">&#10003; In Planner</span>';
-        })()+'</td>'
+        +'<td><button class="stb '+(isDone?'sdone':'sopen')+' bsm" data-togglept="'+t.id+'" style="font-size:9px">'+(isDone?'&#10003; Done':'&#9675; Open')+'</button></td>'
         +'<td>'+(added
-          ?'<button class="btn bsm" data-removeid="'+t.id+'" style="font-size:10px;background:#F0FDF4;border:1px solid #BBF7D0;color:#059669;white-space:nowrap" title="Click to remove from planner">&#10003; Added &mdash; Remove</button>'
-          :'<button class="btn bp bsm" data-ptid="'+t.id+'" style="font-size:10px;white-space:nowrap">+ Add to Planner</button>')+'</td>'
-        +'<td><button class="btn bsm bd" data-del="'+t.id+'">&#215;</button></td>'
+          ?'<button class="btn bsm" data-removeid="'+t.id+'" style="font-size:10px;background:#F0FDF4;border:1px solid #BBF7D0;color:#059669;white-space:nowrap">&#10003; Added &mdash; Remove</button>'
+          :(isDone?'<span style="font-size:10px;color:#CCCCCC">&mdash;</span>':'<button class="btn bp bsm" data-ptid="'+t.id+'" style="font-size:10px;white-space:nowrap">+ Add to Planner</button>'))+'</td>'
         +'</tr>';
     }).join('')+'</tbody></table>';
   list.querySelectorAll('button[data-ptid]').forEach(function(btn){btn.addEventListener('click',function(){addToPlanner(this.dataset.ptid);});});
   list.querySelectorAll('button[data-removeid]').forEach(function(btn){btn.addEventListener('click',function(){removeFromPlanner(this.dataset.removeid);});});
+  list.querySelectorAll('button[data-togglept]').forEach(function(btn){btn.addEventListener('click',function(){togglePTStatus(this.dataset.togglept);});});
   list.querySelectorAll('button[data-del]').forEach(function(btn){btn.addEventListener('click',function(){delPT(this.dataset.del);});});
   initDragDrop();
 }
+function togglePTStatus(ptId){
+  var pt=ldPT();if(!pt[curProj])return;
+  var t=pt[curProj].filter(function(x){return x.id===ptId;})[0];
+  if(!t)return;
+  t.status=t.status==='completed'?'open':'completed';
+  // If also in planner, sync the status there too
+  if(t.addedToPlanner&&t.plannerTaskId){
+    var tasks=ldT();
+    var pt2=tasks.filter(function(x){return x.id===t.plannerTaskId||(x.ptId===ptId);});
+    if(pt2.length){
+      pt2[0].status=t.status;
+      if(t.status==='completed'){pt2[0].completedDate=tod();}
+      else{pt2[0].completedDate=null;}
+      svT(tasks);renderAll();
+    }
+  }
+  svPT(pt);
+  renderProjTasks();renderProjects();
+}
+
 function addProjTask(){
   var inp=document.getElementById('pt-inp');var noteInp=document.getElementById('pt-note');
   var item=(inp.value||'').trim();if(!item||!curProj)return;
   var pt=ldPT();if(!pt[curProj])pt[curProj]=[];
-  pt[curProj].push({id:uid(),item:item,notes:(noteInp.value||'').trim(),addedToPlanner:false,addedDate:null});
+  pt[curProj].push({id:uid(),item:item,notes:(noteInp.value||'').trim(),addedToPlanner:false,addedDate:null,status:'open'});
   svPT(pt);inp.value='';noteInp.value='';renderProjects();
   setTimeout(function(){var n=document.getElementById('pt-inp');if(n)n.focus();},50);
 }
