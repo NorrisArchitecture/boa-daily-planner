@@ -293,23 +293,15 @@ footer{background:var(--black);height:30px;display:flex;align-items:center;justi
           <div class="ni"><span class="nn">3.</span><input class="pi" id="p-wg2" placeholder="..." spellcheck="true"><button class="acc-btn" id="acc-2" onclick="toggleAcc(2)" title="Mark accomplished">&#9679;</button></div>
         </div>
         <div class="ps">
-          <div class="pst">Current Projects</div>
-          <div class="cp2">
-            <div>
-              <div class="ni"><span class="nn">1.</span><input class="pi" id="p-cp0" placeholder="..." spellcheck="true"><button class="proj-link" data-cpidx="0">&#8594;</button></div>
-              <div class="ni"><span class="nn">2.</span><input class="pi" id="p-cp1" placeholder="..." spellcheck="true"><button class="proj-link" data-cpidx="1">&#8594;</button></div>
-              <div class="ni"><span class="nn">3.</span><input class="pi" id="p-cp2" placeholder="..." spellcheck="true"><button class="proj-link" data-cpidx="2">&#8594;</button></div>
-              <div class="ni"><span class="nn">4.</span><input class="pi" id="p-cp3" placeholder="..." spellcheck="true"><button class="proj-link" data-cpidx="3">&#8594;</button></div>
-              <div class="ni"><span class="nn">5.</span><input class="pi" id="p-cp4" placeholder="..." spellcheck="true"><button class="proj-link" data-cpidx="4">&#8594;</button></div>
-            </div>
-            <div>
-              <div class="ni"><span class="nn">6.</span><input class="pi" id="p-cp5" placeholder="..." spellcheck="true"><button class="proj-link" data-cpidx="5">&#8594;</button></div>
-              <div class="ni"><span class="nn">7.</span><input class="pi" id="p-cp6" placeholder="..." spellcheck="true"><button class="proj-link" data-cpidx="6">&#8594;</button></div>
-              <div class="ni"><span class="nn">8.</span><input class="pi" id="p-cp7" placeholder="..." spellcheck="true"><button class="proj-link" data-cpidx="7">&#8594;</button></div>
-              <div class="ni"><span class="nn">9.</span><input class="pi" id="p-cp8" placeholder="..." spellcheck="true"><button class="proj-link" data-cpidx="8">&#8594;</button></div>
-              <div class="ni"><span class="nn">10.</span><input class="pi" id="p-cp9" placeholder="..." spellcheck="true"><button class="proj-link" data-cpidx="9">&#8594;</button></div>
-            </div>
+          <div class="pst" style="display:flex;align-items:center;justify-content:space-between">
+            Current Projects
+            <button onclick="addCurrentProject()" style="background:transparent;border:none;cursor:pointer;font-size:10px;color:#AAAAAA;font-family:var(--f);letter-spacing:1px;padding:0;text-transform:uppercase">+ Add</button>
           </div>
+          <div id="cp-list"></div>
+        </div>
+        <div class="ps">
+          <div class="pst">Current Projects</div>
+          
         </div>
       </div>
       <div class="pcol" style="border-left:1px solid var(--gl)">
@@ -416,10 +408,19 @@ function blankPlan(d){
   var kpis={};KPIS.forEach(function(k){kpis[k]='';});
   return{date:d,role:'',purpose:'',mainGoals:'',
     grateful:['','',''],makeGreat:['','',''],makeGreatDone:[false,false,false],scheduleOrder:[],
-    currentProjects:['','','','','','','','','',''],
+    currentProjects:[],
     kpis:kpis,wins:['','',''],improvements:['','',''],meetings:[]};
 }
 function getProjNames(){
+  // Try live inputs first, fall back to saved data
+  var container=document.getElementById('cp-list');
+  if(container&&container.querySelectorAll('input').length){
+    var live=[];
+    container.querySelectorAll('input[data-cpidx]').forEach(function(inp){
+      if(inp.value.trim())live.push(inp.value.trim());
+    });
+    if(live.length)return live;
+  }
   var p=(ldP()[tod()])||{};
   return(p.currentProjects||[]).filter(function(n){return n&&n.trim();});
 }
@@ -503,14 +504,7 @@ function init(){
   for(var i=0;i<10;i++) document.getElementById('p-cp'+i).addEventListener('input',qSave);
   document.querySelectorAll('.kii').forEach(function(el){el.addEventListener('input',qSave);});
 
-  // Project link buttons
-  document.querySelectorAll('.proj-link').forEach(function(btn){
-    btn.addEventListener('click',function(){
-      var idx=parseInt(this.dataset.cpidx);
-      var val=document.getElementById('p-cp'+idx).value.trim();
-      if(val){curProj=val;showView('projects');}
-    });
-  });
+  // Project link buttons wired dynamically in renderCPList
 
   document.getElementById('addtaskbtn').addEventListener('click',addTask);
   document.getElementById('cleardone').addEventListener('click',clearDone);
@@ -524,7 +518,7 @@ function init(){
     var prevDates=Object.keys(plans).filter(function(d){return d<tod();}).sort();
     if(prevDates.length){
       var last=plans[prevDates[prevDates.length-1]];
-      if(last.currentProjects) np.currentProjects=last.currentProjects.slice();
+      if(last.currentProjects) np.currentProjects=last.currentProjects.filter(function(v){return v&&v.trim();});
     }
     plans[tod()]=np;svP(plans);
   }
@@ -900,7 +894,7 @@ function doSave(){
     p.wins[i]=document.getElementById('p-w'+i).value;
     p.improvements[i]=document.getElementById('p-i'+i).value;
   }
-  for(var i=0;i<10;i++) p.currentProjects[i]=document.getElementById('p-cp'+i).value;
+  // currentProjects saved dynamically via renderCPList inputs
   document.querySelectorAll('.kii').forEach(function(el){p.kpis[el.dataset.kpi]=el.value;});
   plans[today]=p;svP(plans);
   var ind=document.getElementById('saveind');ind.textContent='Saved';setTimeout(function(){ind.textContent='';},1500);
@@ -924,7 +918,7 @@ function loadPlanUI(date){
     document.getElementById('p-w'+i).value=(p.wins||[])[i]||'';
     document.getElementById('p-i'+i).value=(p.improvements||[])[i]||'';
   }
-  for(var i=0;i<10;i++) document.getElementById('p-cp'+i).value=(p.currentProjects||[])[i]||'';
+  renderCPList((p.currentProjects||[]).filter(Boolean));
   document.querySelectorAll('.kii').forEach(function(el){el.value=(p.kpis||{})[el.dataset.kpi]||'';});
 }
 
@@ -1452,6 +1446,77 @@ window.addEventListener('beforeunload', function(){ doSave(); });
 document.addEventListener('visibilitychange', function(){
   if(document.visibilityState==='hidden') doSave();
 });
+
+
+// ── DYNAMIC CURRENT PROJECTS ──────────────────────────────
+function renderCPList(projects){
+  var container=document.getElementById('cp-list');
+  if(!container)return;
+  if(!projects||!projects.length) projects=[''];
+  container.innerHTML=projects.map(function(val,i){
+    return '<div class="ni" id="cp-row-'+i+'">'
+      +'<span class="nn">'+(i+1)+'.</span>'
+      +'<input class="pi" placeholder="Project name..." value="'+escHtml(val)+'" data-cpidx="'+i+'" spellcheck="true">'
+      +'<button class="proj-link" data-cpidx="'+i+'" title="Open project page">&#8594;</button>'
+      +'<button style="background:transparent;border:none;cursor:pointer;color:#DDDDDD;font-size:13px;padding:0 2px;flex-shrink:0" data-cpdelidx="'+i+'" title="Remove">&#215;</button>'
+      +'</div>';
+  }).join('');
+
+  // Wire inputs
+  container.querySelectorAll('input[data-cpidx]').forEach(function(inp){
+    inp.addEventListener('input',function(){saveCPList();qSave();});
+  });
+  // Wire → buttons
+  container.querySelectorAll('button[data-cpidx]').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var val=container.querySelector('input[data-cpidx="'+this.dataset.cpidx+'"]').value.trim();
+      if(val){curProj=val;showView('projects');}
+    });
+  });
+  // Wire × buttons
+  container.querySelectorAll('button[data-cpdelidx]').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var idx=parseInt(this.dataset.cpdelidx);
+      var projects=getCPList();
+      projects.splice(idx,1);
+      if(!projects.length)projects=[''];
+      renderCPList(projects);saveCPList();qSave();
+    });
+  });
+}
+
+function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function getCPList(){
+  var container=document.getElementById('cp-list');
+  if(!container)return[];
+  var vals=[];
+  container.querySelectorAll('input[data-cpidx]').forEach(function(inp){
+    vals.push(inp.value||'');
+  });
+  return vals;
+}
+
+function saveCPList(){
+  var today=tod();var plans=ldP();
+  if(!plans[today])plans[today]=blankPlan(today);
+  plans[today].currentProjects=getCPList().filter(function(v){return v.trim();});
+  svP(plans);
+}
+
+function addCurrentProject(){
+  var current=getCPList();
+  current.push('');
+  renderCPList(current);
+  // Focus new input
+  setTimeout(function(){
+    var container=document.getElementById('cp-list');
+    if(container){
+      var inputs=container.querySelectorAll('input');
+      if(inputs.length) inputs[inputs.length-1].focus();
+    }
+  },40);
+}
 
 window.addEventListener('DOMContentLoaded',init);
 </script>
