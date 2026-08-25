@@ -501,7 +501,7 @@ function init(){
   for(var i=0;i<3;i++){
     ['p-g','p-wg','p-w','p-i'].forEach(function(p){document.getElementById(p+i).addEventListener('input',qSave);});
   }
-  for(var i=0;i<10;i++) document.getElementById('p-cp'+i).addEventListener('input',qSave);
+  // currentProjects wired dynamically
   document.querySelectorAll('.kii').forEach(function(el){el.addEventListener('input',qSave);});
 
   // Project link buttons wired dynamically in renderCPList
