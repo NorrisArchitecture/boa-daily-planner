@@ -1028,7 +1028,7 @@ function renderProjTasks(){
   if(!tasks.length){list.innerHTML='<div class="emsg">No tasks yet &mdash; add one above</div>';return;}
   list.innerHTML='<table><thead><tr>'
     +'<th style="width:24px"></th><th style="width:24px">#</th>'
-    +'<th>TASK</th><th style="width:120px">NOTES</th><th style="width:90px">DUE DATE</th><th style="width:80px">COMPLETE</th><th style="width:80px">PLANNER</th><th style="width:115px"></th><th style="width:26px"></th>'
+    +'<th>TASK</th><th style="width:120px">NOTES</th><th style="width:90px">DATE</th><th style="width:80px">COMPLETE</th><th style="width:80px">PLANNER</th><th style="width:115px"></th><th style="width:26px"></th>'
     +'</tr></thead><tbody id="pt-tbody">'
     +tasks.map(function(t,idx){
       var added=t.addedToPlanner;
