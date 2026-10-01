@@ -1347,7 +1347,9 @@ function checkDueDates(){
 
   Object.keys(pt).forEach(function(projName){
     (pt[projName]||[]).forEach(function(ptTask){
-      if(ptTask.dueDate && ptTask.dueDate<=today && !ptTask.addedToPlanner && ptTask.item){
+      // Skip if completed, already in planner, or no item
+      var alreadyInPlanner=allTasks.some(function(t){return t.ptId===ptTask.id||(t.fromProject===projName&&t.item===ptTask.item&&t.status==='open');});
+      if(ptTask.dueDate && ptTask.dueDate<=today && !ptTask.addedToPlanner && !alreadyInPlanner && ptTask.item && ptTask.status!=='completed'){
         var newTaskId=uid();
         allTasks.push({
           id:newTaskId,priority:'B',order:1,
