@@ -922,21 +922,42 @@ function parseICS(text){
 function syncOutlook(){
   var btn=document.getElementById('syncbtn');
   btn.textContent='Syncing...';btn.disabled=true;
-  fetch(CORS_PROXY+encodeURIComponent(ICS_URL+'?t='+Date.now()),{cache:'no-store'})
-    .then(function(r){return r.text();})
-    .then(function(text){
-      var events=parseICS(text);
-      if(!events.length){alert('No meetings found for today in your Outlook calendar.');btn.textContent='&#8635; Sync Outlook';btn.disabled=false;return;}
-      var plans=ldP();var today=tod();
-      if(!plans[today])plans[today]=blankPlan(today);
-      if(!plans[today].meetings)plans[today].meetings=[];
-      plans[today].meetings=plans[today].meetings.filter(function(m){return !m.fromOutlook;});
-      events.forEach(function(e){plans[today].meetings.push({id:uid(),name:e.name,startHour:e.startHour,duration:e.duration,fromOutlook:true});});
-      svP(plans);renderSched();
-      btn.textContent='&#8635; Sync Outlook';btn.disabled=false;
-      alert(events.length+' meeting(s) synced from Outlook!');
-    })
-    .catch(function(){alert('Could not reach Outlook calendar.');btn.textContent='&#8635; Sync Outlook';btn.disabled=false;});
+  var proxies=[
+    'https://api.allorigins.win/raw?url=',
+    'https://corsproxy.io/?url=',
+    'https://thingproxy.freeboard.io/fetch/',
+    'https://api.codetabs.com/v1/proxy?quest='
+  ];
+  var tried=0;
+  function tryProxy(){
+    if(tried>=proxies.length){
+      alert('Could not reach Outlook calendar. The proxy service may be down — try again later.');
+      btn.textContent='\u21BB Sync Outlook';btn.disabled=false;
+      return;
+    }
+    var url=proxies[tried]+encodeURIComponent(ICS_URL+'?t='+Date.now());
+    tried++;
+    fetch(url,{cache:'no-store'})
+      .then(function(r){
+        if(!r.ok)throw new Error('bad response');
+        return r.text();
+      })
+      .then(function(text){
+        if(!text||text.indexOf('BEGIN:VCALENDAR')===-1)throw new Error('not ical');
+        var events=parseICS(text);
+        if(!events.length){alert('No meetings found for today in your Outlook calendar.');btn.textContent='\u21BB Sync Outlook';btn.disabled=false;return;}
+        var plans=ldP();var today=tod();
+        if(!plans[today])plans[today]=blankPlan(today);
+        if(!plans[today].meetings)plans[today].meetings=[];
+        plans[today].meetings=plans[today].meetings.filter(function(m){return !m.fromOutlook;});
+        events.forEach(function(e){plans[today].meetings.push({id:uid(),name:e.name,startHour:e.startHour,duration:e.duration,fromOutlook:true});});
+        svP(plans);renderSched();
+        btn.textContent='\u21BB Sync Outlook';btn.disabled=false;
+        alert(events.length+' meeting(s) synced from Outlook!');
+      })
+      .catch(function(){tryProxy();});
+  }
+  tryProxy();
 }
 
 // ── PLANNER SAVE/LOAD ────────────────────────────────────────
